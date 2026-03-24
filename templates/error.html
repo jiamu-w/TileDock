@@ -1,0 +1,24 @@
+{{ define "error.html" }}
+<!DOCTYPE html>
+<html lang="{{ .Lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/tiledock-icon.svg">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="error-page">
+  <section class="card narrow">
+    <div class="actions language-switch">
+      <a class="subtle-btn" href="/?lang=zh">{{ t .Lang "lang.zh" }}</a>
+      <a class="subtle-btn" href="/?lang=en">{{ t .Lang "lang.en" }}</a>
+      <a class="subtle-btn" href="/?lang=ja">{{ t .Lang "lang.ja" }}</a>
+    </div>
+    <h1>{{ .Title }}</h1>
+    <p>{{ .Message }}</p>
+    <a class="primary-btn" href="/">{{ t .Lang "error.back_home" }}</a>
+  </section>
+</body>
+</html>
+{{ end }}

@@ -1,0 +1,21 @@
+app:
+  name: TileDock
+  env: development
+server:
+  addr: ":8080"
+database:
+  path: data/panel.db
+storage:
+  upload_dir: data/uploads
+  backup_dir: data/backups
+session:
+  name: panel_session
+  secret: ""
+  max_age: 604800
+  secure: false
+  http_only: true
+auth:
+  default_admin_user: ""
+  default_admin_password: ""
+log:
+  level: info

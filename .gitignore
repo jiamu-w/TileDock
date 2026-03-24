@@ -1,0 +1,17 @@
+.DS_Store
+
+# Build output
+/bin/
+/server
+/panel
+
+# Runtime data
+/data/
+/backups/
+
+# Local uploads outside runtime data
+/static/uploads/
+
+# IDE
+/.idea/
+/.vscode/

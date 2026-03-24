@@ -1,0 +1,35 @@
+{{ define "dashboard/group_card" }}
+<article
+  class="card dashboard-group"
+  data-group-id="{{ .ID }}"
+  data-grid-cols="{{ .GridCols }}"
+  data-grid-rows="{{ .GridRows }}"
+  style="--group-cols: {{ .GridCols }}; --group-rows: {{ .GridRows }};">
+  <div class="split dashboard-group-header">
+    <div class="dashboard-group-title">
+      <span class="drag-chip edit-only">{{ t .Lang "dashboard.group.drag" }}</span>
+      <h2>{{ .Name }}</h2>
+    </div>
+    <div class="actions edit-only">
+      <button class="ghost-btn edit-only" type="button" data-panel-toggle="edit-group-{{ .ID }}">{{ t .Lang "dashboard.group.edit" }}</button>
+      <button class="danger-btn edit-only" type="button" data-delete="/navigation/groups/{{ .ID }}">{{ t .Lang "dashboard.group.delete" }}</button>
+    </div>
+  </div>
+
+  {{ template "dashboard/panel_group_edit" . }}
+  {{ template "dashboard/panel_link_new" . }}
+
+  <ul class="dashboard-links" data-group-id="{{ .ID }}">
+    {{ range .NavLinks }}
+    {{ template "dashboard/link_tile" . }}
+    {{ else }}
+    <li class="dashboard-link empty-placeholder muted">{{ t .Lang "dashboard.link.empty" }}</li>
+    {{ end }}
+    <li class="dashboard-link edit-only add-link-item">
+      <button class="add-link-tile edit-only" type="button" data-panel-toggle="add-link-{{ .ID }}">{{ t .Lang "dashboard.link.new" }}</button>
+    </li>
+  </ul>
+  <div class="group-size-badge edit-only" aria-hidden="true"></div>
+  <button class="group-resize-handle edit-only" type="button" aria-label="Resize group"></button>
+</article>
+{{ end }}

@@ -1,0 +1,129 @@
+{{ define "dashboard/index.html" }}
+<!DOCTYPE html>
+<html lang="{{ .Lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ .CSRFToken }}">
+  <title>{{ .Title }} - TileDock</title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/tiledock-icon.svg">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    {{ .Data.DashboardCSS | safeCSS }}
+  </style>
+</head>
+<body class="dashboard-page">
+  <div class="layout solo-layout">
+    <main class="content dashboard-content" data-dashboard-editor data-reorder-endpoint="/navigation/reorder">
+      <section class="page-header hero-card">
+        <div class="hero-center">
+          <div class="hero-clock" data-dashboard-clock data-lang="{{ .Lang }}">
+            <div class="hero-clock-time">
+              <span class="hero-clock-main-time">00:00</span>
+              <span class="hero-clock-seconds">00</span>
+            </div>
+            <div class="hero-clock-date">
+              <span class="hero-clock-weekday">Monday</span>
+              <span class="hero-clock-calendar">2026-01-01</span>
+            </div>
+          </div>
+          {{ if .Data.WeatherLocation }}
+          <div
+            class="hero-weather"
+            data-dashboard-weather
+            data-lang="{{ .Lang }}"
+            data-loading-text="{{ t .Lang "weather.loading" }}"
+            data-unavailable-text="{{ t .Lang "weather.unavailable" }}">
+            <div class="hero-weather-main">
+              <span class="hero-weather-temp">--°C</span>
+              <span class="hero-weather-icon">--</span>
+            </div>
+            <div class="hero-weather-meta">
+              <span class="hero-weather-text">{{ t .Lang "weather.loading" }}</span>
+              <span class="hero-weather-location">{{ .Data.WeatherLocation }}</span>
+            </div>
+          </div>
+          {{ end }}
+        </div>
+        {{ if .Data.CanManage }}
+        <div class="actions">
+          <form method="get" action="/" class="language-select-form">
+            <select class="subtle-select" name="lang" onchange="this.form.submit()">
+              <option value="zh" {{ if eq .Lang "zh" }}selected{{ end }}>{{ t .Lang "lang.zh" }}</option>
+              <option value="en" {{ if eq .Lang "en" }}selected{{ end }}>{{ t .Lang "lang.en" }}</option>
+              <option value="ja" {{ if eq .Lang "ja" }}selected{{ end }}>{{ t .Lang "lang.ja" }}</option>
+            </select>
+          </form>
+          <button class="ghost-btn" type="button" data-panel-toggle="dashboard-settings-panel">{{ t .Lang "dashboard.settings" }}</button>
+          <button class="primary-btn" type="button" data-edit-toggle data-edit-on="{{ t .Lang "dashboard.edit.enter" }}" data-edit-off="{{ t .Lang "dashboard.edit.exit" }}">{{ t .Lang "dashboard.edit.enter" }}</button>
+        </div>
+        {{ else }}
+        <div class="actions">
+          <form method="get" action="/" class="language-select-form">
+            <select class="subtle-select" name="lang" onchange="this.form.submit()">
+              <option value="zh" {{ if eq .Lang "zh" }}selected{{ end }}>{{ t .Lang "lang.zh" }}</option>
+              <option value="en" {{ if eq .Lang "en" }}selected{{ end }}>{{ t .Lang "lang.en" }}</option>
+              <option value="ja" {{ if eq .Lang "ja" }}selected{{ end }}>{{ t .Lang "lang.ja" }}</option>
+            </select>
+          </form>
+          <a class="subtle-btn" href="/login?lang={{ .Lang }}">{{ t .Lang "dashboard.login_manage" }}</a>
+        </div>
+        {{ end }}
+      </section>
+
+      <section class="stack">
+        {{ if .Data.CanManage }}
+        <div class="toolbar edit-only">
+          <span class="muted">{{ t .Lang "dashboard.toolbar" }}</span>
+        </div>
+        {{ end }}
+        <div class="dashboard-groups" id="dashboard-groups">
+          {{ range .Data.Groups }}
+          {{ template "dashboard/group_card" . }}
+          {{ else }}
+          <section class="card">
+            <p class="muted">{{ t $.Lang "dashboard.empty_groups" }}</p>
+          </section>
+          {{ end }}
+        </div>
+        {{ if .Data.CanManage }}
+        <form id="new-group-panel" method="post" action="/navigation/groups" class="card stack edit-only hidden-panel">
+          <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+          <label><span>{{ t .Lang "dashboard.form.name" }}</span><input name="name" required></label>
+          <label><span>{{ t .Lang "dashboard.form.description" }}</span><input name="description"></label>
+          <div class="actions">
+            <button class="primary-btn" type="submit">{{ t .Lang "dashboard.group.create" }}</button>
+            <button class="ghost-btn" type="button" data-panel-toggle="new-group-panel">{{ t .Lang "common.cancel" }}</button>
+          </div>
+        </form>
+        <button class="add-bar edit-only" type="button" data-panel-toggle="new-group-panel">{{ t .Lang "dashboard.group.new" }}</button>
+        {{ end }}
+      </section>
+
+      <footer class="page-footer">
+        <span class="eyebrow footer-tagline">{{ .Data.DashboardTagline }}</span>
+      </footer>
+    </main>
+  </div>
+
+  {{ if .Data.CanManage }}
+  {{ template "dashboard/panel_settings" . }}
+  {{ end }}
+
+  <script>
+    window.panelI18n = {
+      confirmDelete: {{ printf "%q" (t .Lang "js.confirm_delete") }},
+      deleteFailed: {{ printf "%q" (t .Lang "js.delete_failed") }},
+      reorderFailed: {{ printf "%q" (t .Lang "js.reorder_failed") }},
+      emptyLink: {{ printf "%q" (t .Lang "dashboard.link.empty") }},
+      csrfToken: {{ printf "%q" .CSRFToken }}
+    };
+  </script>
+  <script src="/static/js/url-cleanup.js"></script>
+  <script src="/static/js/panel-actions.js"></script>
+  <script src="/static/js/dashboard-editor.js"></script>
+  <script src="/static/js/dashboard-clock.js"></script>
+  <script src="/static/js/dashboard-weather.js"></script>
+</body>
+</html>
+{{ end }}

@@ -1,0 +1,149 @@
+{{ define "dashboard/panel_settings" }}
+<div id="dashboard-settings-panel" class="floating-panel hidden-panel{{ if .SettingsOpen }} is-open{{ end }}">
+  <div class="floating-backdrop" data-panel-toggle="dashboard-settings-panel"></div>
+  <div class="card floating-card panel-shell">
+    <div class="panel-head">
+      <h3>{{ t .Lang "settings.title" }}</h3>
+    </div>
+    <div class="stack panel-body settings-sections">
+      {{ if .Success }}
+      <p class="notice success-notice">{{ .Success }}</p>
+      {{ end }}
+      {{ if .Error }}
+      <p class="notice error-notice">{{ .Error }}</p>
+      {{ end }}
+        <section class="settings-section stack">
+          <div>
+            <h4>{{ t .Lang "settings.background.title" }}</h4>
+            <p class="muted">{{ t .Lang "settings.background.desc" }}</p>
+          </div>
+          <form id="dashboard-settings-form" method="post" action="/settings" class="stack" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+            <input type="hidden" name="existing_background" value="{{ .Data.DashboardBg }}">
+            <label>
+              <span>{{ t .Lang "settings.branding.dashboard_tagline" }}</span>
+              <input name="dashboard_tagline" value="{{ .Data.DashboardTagline }}" placeholder="TileDock">
+            </label>
+            <label>
+              <span>{{ t .Lang "settings.weather.location" }}</span>
+              <input name="weather_location" value="{{ .Data.WeatherLocation }}" placeholder="{{ t .Lang "settings.weather.location_placeholder" }}">
+              <small class="muted">{{ t .Lang "settings.weather.desc" }}</small>
+            </label>
+            <label>
+              <span>{{ t .Lang "settings.background.upload" }}</span>
+              <input name="dashboard_background_file" type="file" accept=".jpg,.jpeg,.png,.webp,.gif">
+            </label>
+            <label>
+              <span>{{ t .Lang "settings.background.blur" }}</span>
+              <input name="dashboard_blur" type="range" min="0" max="40" step="1" value="{{ .Data.DashboardBlur }}">
+              <small class="muted">{{ .Data.DashboardBlur }} px</small>
+            </label>
+            <label>
+              <span>{{ t .Lang "settings.background.overlay" }}</span>
+              <input name="dashboard_overlay" type="range" min="0" max="0.85" step="0.05" value="{{ printf "%.2f" .Data.DashboardOverlay }}">
+              <small class="muted">{{ printf "%.2f" .Data.DashboardOverlay }}</small>
+            </label>
+            {{ if .Data.DashboardBg }}
+            <div class="stack">
+              <span class="muted">{{ t .Lang "settings.background.preview" }}</span>
+              <img class="settings-preview" src="{{ .Data.DashboardBg }}" alt="dashboard background preview">
+            </div>
+            <label class="inline"><input name="clear_background" type="checkbox"> {{ t .Lang "settings.background.clear" }}</label>
+            {{ else }}
+            <p class="muted">{{ t .Lang "settings.background.empty" }}</p>
+            {{ end }}
+          </form>
+        </section>
+        <section class="settings-section stack">
+          <div>
+            <h4>{{ t .Lang "settings.user.title" }}</h4>
+            <p class="muted">{{ t .Lang "settings.user.desc" }}</p>
+          </div>
+          <form method="post" action="/settings/profile" class="stack">
+            <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+            <label>
+              <span>{{ t .Lang "settings.user.username" }}</span>
+              <input name="username" value="{{ .Data.CurrentUsername }}" required>
+            </label>
+            <div class="actions">
+              <button class="ghost-btn" type="submit">{{ t .Lang "settings.user.save_username" }}</button>
+            </div>
+          </form>
+          <form method="post" action="/settings/password" class="stack">
+            <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+            <label>
+              <span>{{ t .Lang "settings.user.current_password" }}</span>
+              <input name="current_password" type="password" required>
+            </label>
+            <label>
+              <span>{{ t .Lang "settings.user.new_password" }}</span>
+              <input name="new_password" type="password" required>
+            </label>
+            <label>
+              <span>{{ t .Lang "settings.user.confirm_password" }}</span>
+              <input name="confirm_password" type="password" required>
+            </label>
+            <div class="actions">
+              <button class="ghost-btn" type="submit">{{ t .Lang "settings.user.save_password" }}</button>
+            </div>
+          </form>
+        </section>
+        <section class="settings-section stack">
+          <div>
+            <h4>{{ t .Lang "settings.backup.title" }}</h4>
+            <p class="muted">{{ t .Lang "settings.backup.desc" }}</p>
+          </div>
+          <form method="post" action="/settings/backup" class="stack">
+            <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+            <p class="muted">{{ t .Lang "settings.backup.note" }}</p>
+            <div class="actions">
+              <button class="ghost-btn" type="submit">{{ t .Lang "settings.backup.download" }}</button>
+            </div>
+          </form>
+          <form method="post" action="/settings/restore" class="stack" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+            <label>
+              <span>{{ t .Lang "settings.restore.upload" }}</span>
+              <input name="backup_archive" type="file" accept=".zip" required>
+            </label>
+            <label>
+              <span>{{ t .Lang "settings.user.current_password" }}</span>
+              <input name="current_password" type="password" required>
+            </label>
+            <p class="muted">{{ t .Lang "settings.restore.note" }}</p>
+            <div class="actions">
+              <button class="danger-btn" type="submit">{{ t .Lang "settings.restore.submit" }}</button>
+            </div>
+          </form>
+        </section>
+        <section class="settings-section stack">
+          <div>
+            <h4>{{ t .Lang "settings.bookmarks.title" }}</h4>
+            <p class="muted">{{ t .Lang "settings.bookmarks.desc" }}</p>
+          </div>
+          <form method="post" action="/settings/bookmarks/import" class="stack" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+            <label>
+              <span>{{ t .Lang "settings.bookmarks.upload" }}</span>
+              <input name="bookmark_file" type="file" accept=".html,.htm,text/html" required>
+            </label>
+            <p class="muted">{{ t .Lang "settings.bookmarks.note" }}</p>
+            <div class="actions">
+              <button class="ghost-btn" type="submit">{{ t .Lang "settings.bookmarks.submit" }}</button>
+            </div>
+          </form>
+        </section>
+      </div>
+      <div class="panel-foot split">
+        <form method="post" action="/logout">
+          <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+          <button class="danger-btn" type="submit">{{ t .Lang "settings.logout" }}</button>
+        </form>
+        <div class="actions">
+          <button class="primary-btn" type="submit" form="dashboard-settings-form">{{ t .Lang "settings.save" }}</button>
+          <button class="ghost-btn" type="button" data-panel-toggle="dashboard-settings-panel">{{ t .Lang "common.close" }}</button>
+        </div>
+      </div>
+    </div>
+</div>
+{{ end }}

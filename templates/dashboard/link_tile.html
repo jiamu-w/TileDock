@@ -1,0 +1,25 @@
+{{ define "dashboard/link_tile" }}
+<li class="dashboard-link" data-link-id="{{ .ID }}">
+  <div class="link-shell">
+    <a class="dashboard-link-tile" href="{{ .URL }}" target="_blank" rel="noreferrer" data-panel-toggle="edit-link-{{ .ID }}">
+      <span class="link-icon {{ if not .Icon }}letter-icon{{ end }}">
+        {{ if .Icon }}
+        <img src="{{ .Icon }}" alt="{{ .Title }}">
+        {{ else }}
+        {{ initial .Title }}
+        {{ end }}
+      </span>
+      <span class="link-labels">
+        <strong>{{ .Title }}</strong>
+        {{ if .Description }}
+        <span class="muted">{{ .Description }}</span>
+        {{ end }}
+      </span>
+    </a>
+  </div>
+  {{ if .Description }}
+  <div class="link-hover-detail">{{ .Description }}</div>
+  {{ end }}
+  {{ template "dashboard/panel_link_edit" . }}
+</li>
+{{ end }}

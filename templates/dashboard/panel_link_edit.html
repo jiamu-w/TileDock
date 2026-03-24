@@ -1,0 +1,38 @@
+{{ define "dashboard/panel_link_edit" }}
+<div id="edit-link-{{ .ID }}" class="floating-panel edit-only hidden-panel">
+  <div class="floating-backdrop" data-panel-toggle="edit-link-{{ .ID }}"></div>
+  <form method="post" action="/navigation/links/{{ .ID }}" class="card stack compact floating-card" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+    <h3>{{ t .Lang "dashboard.link.edit" }}</h3>
+    <input type="hidden" name="group_id" value="{{ .GroupID }}">
+    <input type="hidden" name="existing_icon" value="{{ .Icon }}">
+    <label>
+      <span>{{ t .Lang "dashboard.form.name" }}</span>
+      <input name="title" value="{{ .Title }}" required>
+    </label>
+    <label>
+      <span>{{ t .Lang "dashboard.form.url" }}</span>
+      <input name="url" value="{{ .URL }}" required>
+    </label>
+    <label>
+      <span>{{ t .Lang "dashboard.form.detail" }}</span>
+      <input name="description" value="{{ .Description }}">
+    </label>
+    <label>
+      <span>{{ t .Lang "dashboard.form.icon_url" }}</span>
+      <input name="icon" value="{{ .Icon }}">
+    </label>
+    <label>
+      <span>{{ t .Lang "dashboard.form.icon_file" }}</span>
+      <input name="icon_file" type="file" accept=".jpg,.jpeg,.png,.webp,.gif">
+    </label>
+    <label class="inline"><input name="clear_icon" type="checkbox"> {{ t .Lang "dashboard.form.icon_clear" }}</label>
+    <label class="inline"><input name="open_in_new" type="checkbox" {{ if .OpenInNew }}checked{{ end }}> {{ t .Lang "dashboard.form.open_new" }}</label>
+    <div class="actions">
+      <button class="ghost-btn" type="submit">{{ t .Lang "dashboard.link.save" }}</button>
+      <button class="ghost-btn" type="button" data-panel-toggle="edit-link-{{ .ID }}">{{ t .Lang "common.cancel" }}</button>
+      <button class="danger-btn edit-only" type="button" data-delete="/navigation/links/{{ .ID }}">{{ t .Lang "dashboard.link.delete" }}</button>
+    </div>
+  </form>
+</div>
+{{ end }}

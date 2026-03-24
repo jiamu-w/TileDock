@@ -1,0 +1,38 @@
+{{ define "auth/login.html" }}
+<!DOCTYPE html>
+<html lang="{{ .Lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }} - TileDock</title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/tiledock-icon.svg">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="login-page">
+  <section class="card narrow">
+    <form method="get" action="/login" class="actions language-switch language-select-form">
+      <select class="subtle-select" name="lang" onchange="this.form.submit()">
+        <option value="zh" {{ if eq .Lang "zh" }}selected{{ end }}>{{ t .Lang "lang.zh" }}</option>
+        <option value="en" {{ if eq .Lang "en" }}selected{{ end }}>{{ t .Lang "lang.en" }}</option>
+        <option value="ja" {{ if eq .Lang "ja" }}selected{{ end }}>{{ t .Lang "lang.ja" }}</option>
+      </select>
+    </form>
+    <h1>{{ t .Lang "login.heading" }}</h1>
+    <p class="muted">{{ t .Lang "login.hint" }}</p>
+    {{ if .Error }}<div class="alert">{{ .Error }}</div>{{ end }}
+    <form method="post" action="/login" class="stack">
+      <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+      <label>
+        <span>{{ t .Lang "login.username" }}</span>
+        <input type="text" name="username" required>
+      </label>
+      <label>
+        <span>{{ t .Lang "login.password" }}</span>
+        <input type="password" name="password" required>
+      </label>
+      <button class="primary-btn" type="submit">{{ t .Lang "login.submit" }}</button>
+    </form>
+  </section>
+</body>
+</html>
+{{ end }}
