@@ -8,7 +8,7 @@
   var translations = window.panelI18n || {};
   var csrfMeta = document.querySelector('meta[name="csrf-token"]');
   var csrfToken = (csrfMeta && csrfMeta.getAttribute("content")) || translations.csrfToken || "";
-  var toggle = editorRoot.querySelector("[data-edit-toggle]");
+  var toggle = document.querySelector("[data-edit-toggle]");
   var board = editorRoot.querySelector("#dashboard-groups");
   var reorderEndpoint = editorRoot.getAttribute("data-reorder-endpoint");
   var editModeKey = "tiledock.editMode";

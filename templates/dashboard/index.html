@@ -45,30 +45,6 @@
           </div>
           {{ end }}
         </div>
-        {{ if .Data.CanManage }}
-        <div class="actions">
-          <form method="get" action="/" class="language-select-form">
-            <select class="subtle-select" name="lang" onchange="this.form.submit()">
-              <option value="zh" {{ if eq .Lang "zh" }}selected{{ end }}>{{ t .Lang "lang.zh" }}</option>
-              <option value="en" {{ if eq .Lang "en" }}selected{{ end }}>{{ t .Lang "lang.en" }}</option>
-              <option value="ja" {{ if eq .Lang "ja" }}selected{{ end }}>{{ t .Lang "lang.ja" }}</option>
-            </select>
-          </form>
-          <button class="ghost-btn" type="button" data-panel-toggle="dashboard-settings-panel">{{ t .Lang "dashboard.settings" }}</button>
-          <button class="primary-btn" type="button" data-edit-toggle data-edit-on="{{ t .Lang "dashboard.edit.enter" }}" data-edit-off="{{ t .Lang "dashboard.edit.exit" }}">{{ t .Lang "dashboard.edit.enter" }}</button>
-        </div>
-        {{ else }}
-        <div class="actions">
-          <form method="get" action="/" class="language-select-form">
-            <select class="subtle-select" name="lang" onchange="this.form.submit()">
-              <option value="zh" {{ if eq .Lang "zh" }}selected{{ end }}>{{ t .Lang "lang.zh" }}</option>
-              <option value="en" {{ if eq .Lang "en" }}selected{{ end }}>{{ t .Lang "lang.en" }}</option>
-              <option value="ja" {{ if eq .Lang "ja" }}selected{{ end }}>{{ t .Lang "lang.ja" }}</option>
-            </select>
-          </form>
-          <a class="subtle-btn" href="/login?lang={{ .Lang }}">{{ t .Lang "dashboard.login_manage" }}</a>
-        </div>
-        {{ end }}
       </section>
 
       <section class="stack">
@@ -103,6 +79,22 @@
         <span class="eyebrow footer-tagline">{{ .Data.DashboardTagline }}</span>
       </footer>
     </main>
+  </div>
+
+  <div class="hero-actions hero-actions-floating">
+    <form method="get" action="/" class="language-select-form">
+      <select class="subtle-select" name="lang" onchange="this.form.submit()">
+        <option value="zh" {{ if eq .Lang "zh" }}selected{{ end }}>{{ t .Lang "lang.zh" }}</option>
+        <option value="en" {{ if eq .Lang "en" }}selected{{ end }}>{{ t .Lang "lang.en" }}</option>
+        <option value="ja" {{ if eq .Lang "ja" }}selected{{ end }}>{{ t .Lang "lang.ja" }}</option>
+      </select>
+    </form>
+    {{ if .Data.CanManage }}
+    <button class="ghost-btn" type="button" data-panel-toggle="dashboard-settings-panel">{{ t .Lang "dashboard.settings" }}</button>
+    <button class="primary-btn" type="button" data-edit-toggle data-edit-on="{{ t .Lang "dashboard.edit.enter" }}" data-edit-off="{{ t .Lang "dashboard.edit.exit" }}">{{ t .Lang "dashboard.edit.enter" }}</button>
+    {{ else }}
+    <a class="subtle-btn" href="/login?lang={{ .Lang }}">{{ t .Lang "dashboard.login_manage" }}</a>
+    {{ end }}
   </div>
 
   {{ if .Data.CanManage }}

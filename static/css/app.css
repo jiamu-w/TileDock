@@ -259,6 +259,26 @@ th, td {
   border-color: rgba(167, 208, 255, 0.24);
   outline: none;
 }
+.hero-actions {
+  position: fixed;
+  top: 1.5rem;
+  right: 2rem;
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(10, 18, 31, 0.46);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 14px 34px rgba(2, 8, 23, 0.22);
+}
+.hero-actions .language-select-form {
+  margin: 0;
+}
+
 .hero-card {
   display: flex;
   justify-content: space-between;
@@ -967,6 +987,14 @@ body:not(.is-editing) .dashboard-link:hover .link-hover-detail {
   padding: 2rem;
 }
 @media (max-width: 900px) {
+  .hero-actions {
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    width: auto;
+    justify-content: flex-end;
+    padding: 0.45rem 0.55rem;
+  }
   .layout {
     grid-template-columns: 1fr;
   }
