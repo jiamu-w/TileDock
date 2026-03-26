@@ -46,7 +46,7 @@ func (s *BookmarkImportService) ImportHTML(ctx context.Context, reader io.Reader
 
 	result := &BookmarkImportResult{}
 	for _, group := range groups {
-		groupID, err := s.nav.CreateGroupWithID(ctx, group.Name, "")
+		groupID, err := s.nav.CreateGroupWithID(ctx, group.Name)
 		if err != nil {
 			return nil, fmt.Errorf("create group %q: %w", group.Name, err)
 		}

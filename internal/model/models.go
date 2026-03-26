@@ -31,7 +31,6 @@ func (u *User) BeforeCreate(_ *gorm.DB) error {
 type NavGroup struct {
 	ID          string    `gorm:"type:text;primaryKey"`
 	Name        string    `gorm:"type:text;not null"`
-	Description string    `gorm:"type:text"`
 	SortOrder   int       `gorm:"not null;default:0"`
 	GridCols    int       `gorm:"not null;default:0"`
 	GridRows    int       `gorm:"not null;default:0"`

@@ -27,7 +27,7 @@ func NewNavigationHandler(renderer *view.Renderer, service *service.NavigationSe
 // CreateGroup handles group creation.
 func (h *NavigationHandler) CreateGroup(c *gin.Context) {
 	name := c.PostForm("name")
-	if err := h.service.CreateGroup(c.Request.Context(), c.PostForm("name"), c.PostForm("description")); err != nil {
+	if err := h.service.CreateGroup(c.Request.Context(), c.PostForm("name")); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -39,7 +39,7 @@ func (h *NavigationHandler) CreateGroup(c *gin.Context) {
 func (h *NavigationHandler) UpdateGroup(c *gin.Context) {
 	groupID := c.Param("id")
 	name := c.PostForm("name")
-	if err := h.service.UpdateGroup(c.Request.Context(), c.Param("id"), c.PostForm("name"), c.PostForm("description")); err != nil {
+	if err := h.service.UpdateGroup(c.Request.Context(), c.Param("id"), c.PostForm("name")); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

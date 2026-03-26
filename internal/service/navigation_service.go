@@ -54,13 +54,13 @@ func (s *NavigationService) List(ctx context.Context) (*NavigationPageData, erro
 }
 
 // CreateGroup creates a new group.
-func (s *NavigationService) CreateGroup(ctx context.Context, name, description string) error {
-	_, err := s.CreateGroupWithID(ctx, name, description)
+func (s *NavigationService) CreateGroup(ctx context.Context, name string) error {
+	_, err := s.CreateGroupWithID(ctx, name)
 	return err
 }
 
 // CreateGroupWithID creates a new group and returns its ID.
-func (s *NavigationService) CreateGroupWithID(ctx context.Context, name, description string) (string, error) {
+func (s *NavigationService) CreateGroupWithID(ctx context.Context, name string) (string, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return "", errors.New("group name is required")
@@ -72,9 +72,8 @@ func (s *NavigationService) CreateGroupWithID(ctx context.Context, name, descrip
 	}
 
 	group := &model.NavGroup{
-		Name:        name,
-		Description: strings.TrimSpace(description),
-		SortOrder:   sortOrder,
+		Name:      name,
+		SortOrder: sortOrder,
 	}
 	if err := s.groupRepo.Create(ctx, group); err != nil {
 		return "", err
@@ -83,7 +82,7 @@ func (s *NavigationService) CreateGroupWithID(ctx context.Context, name, descrip
 }
 
 // UpdateGroup updates a group.
-func (s *NavigationService) UpdateGroup(ctx context.Context, id, name, description string) error {
+func (s *NavigationService) UpdateGroup(ctx context.Context, id, name string) error {
 	group, err := s.groupRepo.FindByID(ctx, id)
 	if err != nil {
 		return err
@@ -95,7 +94,6 @@ func (s *NavigationService) UpdateGroup(ctx context.Context, id, name, descripti
 	}
 
 	group.Name = name
-	group.Description = strings.TrimSpace(description)
 
 	return s.groupRepo.Update(ctx, group)
 }

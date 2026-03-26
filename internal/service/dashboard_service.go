@@ -158,8 +158,6 @@ func assignGroupGridSpan(group *model.NavGroup) {
 	}
 
 	linkCount := len(group.NavLinks)
-	descriptionLength := len(strings.TrimSpace(group.Description))
-
 	group.GridCols = 10
 	group.GridRows = 10
 
@@ -175,9 +173,6 @@ func assignGroupGridSpan(group *model.NavGroup) {
 		group.GridRows = 13
 	}
 
-	if descriptionLength > 60 {
-		group.GridRows += 2
-	}
 	if linkCount == 0 {
 		group.GridRows = maxInt(group.GridRows, 9)
 	}

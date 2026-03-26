@@ -5,7 +5,6 @@
     <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
     <h3>{{ t .Lang "dashboard.group.edit" }}</h3>
     <label><span>{{ t .Lang "dashboard.form.name" }}</span><input class="edit-only" name="name" value="{{ .Name }}" required></label>
-    <label><span>{{ t .Lang "dashboard.form.description" }}</span><input class="edit-only" name="description" value="{{ .Description }}"></label>
     <div class="actions">
       <button class="ghost-btn edit-only" type="submit">{{ t .Lang "dashboard.group.save" }}</button>
       <button class="ghost-btn edit-only" type="button" data-panel-toggle="edit-group-{{ .ID }}">{{ t .Lang "common.cancel" }}</button>

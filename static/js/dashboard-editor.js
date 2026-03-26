@@ -11,6 +11,7 @@
   var toggle = editorRoot.querySelector("[data-edit-toggle]");
   var board = editorRoot.querySelector("#dashboard-groups");
   var reorderEndpoint = editorRoot.getAttribute("data-reorder-endpoint");
+  var editModeKey = "tiledock.editMode";
   var dragState = { type: "", element: null, placeholder: null };
   var resizeState = null;
   var resizeSettleTimer = null;
@@ -76,23 +77,29 @@
     return placeholder;
   }
 
-  function updateSizeBadge(group) {
-    if (!group) {
-      return;
-    }
-    var badge = group.querySelector(".group-size-badge");
-    if (!badge) {
-      return;
-    }
-    var cols = parseInt(group.getAttribute("data-grid-cols") || "10", 10) || 10;
-    var rows = parseInt(group.getAttribute("data-grid-rows") || "10", 10) || 10;
-    badge.textContent = cols + " × " + rows;
-  }
 
   function closePanels() {
     document.querySelectorAll(".hidden-panel.is-open").forEach(function (panel) {
       panel.classList.remove("is-open");
     });
+  }
+
+  function persistEditMode() {
+    try {
+      if (body.classList.contains("is-editing")) {
+        window.sessionStorage.setItem(editModeKey, "1");
+      } else {
+        window.sessionStorage.removeItem(editModeKey);
+      }
+    } catch (_) {}
+  }
+
+  function restoreEditMode() {
+    try {
+      if (window.sessionStorage.getItem(editModeKey) === "1") {
+        body.classList.add("is-editing");
+      }
+    } catch (_) {}
   }
 
   function syncDraggableState() {
@@ -305,6 +312,7 @@
 
   toggle && toggle.addEventListener("click", function () {
     body.classList.toggle("is-editing");
+    persistEditMode();
     closePanels();
     syncDraggableState();
     refreshEmptyState();
@@ -399,7 +407,6 @@
     };
 
     group.classList.add("is-resizing");
-    updateSizeBadge(group);
     handle.setPointerCapture(event.pointerId);
   });
 
@@ -420,7 +427,6 @@
     nextRows = Math.max(4, Math.min(28, nextRows));
 
     applyGroupSpan(resizeState.group, nextCols, nextRows);
-    updateSizeBadge(resizeState.group);
   });
 
   document.addEventListener("pointerup", async function (event) {
@@ -439,7 +445,6 @@
     var currentRows = parseInt(group.getAttribute("data-grid-rows") || "10", 10) || 10;
     var normalized = normalizeGroupSpan(group, resizeState.metrics, currentCols, currentRows);
     applyGroupSpan(group, normalized.cols, normalized.rows);
-    updateSizeBadge(group);
     triggerResizeSettle(group);
 
     resizeState = null;
@@ -536,6 +541,7 @@
     tokenInput.value = csrfToken;
   });
 
+  restoreEditMode();
   syncCSRFInputs(document);
   syncDraggableState();
   refreshEmptyState();

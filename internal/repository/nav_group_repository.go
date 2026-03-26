@@ -37,7 +37,7 @@ func (r *NavGroupRepository) Create(ctx context.Context, group *model.NavGroup) 
 
 // Update updates a group.
 func (r *NavGroupRepository) Update(ctx context.Context, group *model.NavGroup) error {
-	return r.db.WithContext(ctx).Model(group).Select("name", "description", "sort_order", "grid_cols", "grid_rows").Updates(group).Error
+	return r.db.WithContext(ctx).Model(group).Select("name", "sort_order", "grid_cols", "grid_rows").Updates(group).Error
 }
 
 // Delete deletes a group.

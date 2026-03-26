@@ -7,7 +7,6 @@
   style="--group-cols: {{ .GridCols }}; --group-rows: {{ .GridRows }};">
   <div class="split dashboard-group-header">
     <div class="dashboard-group-title">
-      <span class="drag-chip edit-only">{{ t .Lang "dashboard.group.drag" }}</span>
       <h2>{{ .Name }}</h2>
     </div>
     <div class="actions edit-only">
@@ -29,7 +28,6 @@
       <button class="add-link-tile edit-only" type="button" data-panel-toggle="add-link-{{ .ID }}">{{ t .Lang "dashboard.link.new" }}</button>
     </li>
   </ul>
-  <div class="group-size-badge edit-only" aria-hidden="true"></div>
   <button class="group-resize-handle edit-only" type="button" aria-label="Resize group"></button>
 </article>
 {{ end }}

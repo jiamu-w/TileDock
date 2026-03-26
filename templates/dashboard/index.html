@@ -90,7 +90,6 @@
         <form id="new-group-panel" method="post" action="/navigation/groups" class="card stack edit-only hidden-panel">
           <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
           <label><span>{{ t .Lang "dashboard.form.name" }}</span><input name="name" required></label>
-          <label><span>{{ t .Lang "dashboard.form.description" }}</span><input name="description"></label>
           <div class="actions">
             <button class="primary-btn" type="submit">{{ t .Lang "dashboard.group.create" }}</button>
             <button class="ghost-btn" type="button" data-panel-toggle="new-group-panel">{{ t .Lang "common.cancel" }}</button>
