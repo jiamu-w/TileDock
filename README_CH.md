@@ -2,6 +2,8 @@
 
 [中文](./README_CH.md) | [English](./README.md)
 
+Docker Hub: <https://hub.docker.com/repository/docker/jiamum/tiledock/general>
+
 一个基于 Go 1.22、Gin、GORM、SQLite 和 `html/template` 的轻量级自托管导航面板，主打拖拽和平铺布局。
 
 当前版本采用：

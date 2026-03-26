@@ -2,6 +2,8 @@
 
 [中文](./README_CH.md) | [English](./README.md)
 
+Docker Hub: <https://hub.docker.com/repository/docker/jiamum/tiledock/general>
+
 TileDock is a lightweight self-hosted navigation panel built with Go 1.22, Gin, GORM, SQLite, and `html/template`, with a focus on drag-and-tile layout editing.
 
 The current version uses:
