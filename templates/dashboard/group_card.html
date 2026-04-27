@@ -2,12 +2,15 @@
 <article
   class="card dashboard-group"
   data-group-id="{{ .ID }}"
+  data-category-name="{{ .Name }}"
+  data-search-text="{{ .Name }}"
   data-grid-cols="{{ .GridCols }}"
   data-grid-rows="{{ .GridRows }}"
   style="--group-cols: {{ .GridCols }}; --group-rows: {{ .GridRows }};">
   <div class="split dashboard-group-header">
     <div class="dashboard-group-title">
       <h2>{{ .Name }}</h2>
+      <p class="muted">{{ len .NavLinks }} {{ if eq .Lang "zh" }}个网站{{ else if eq .Lang "ja" }}サイト{{ else }}sites{{ end }}</p>
     </div>
     <div class="actions edit-only">
       <button class="ghost-btn edit-only" type="button" data-panel-toggle="edit-group-{{ .ID }}">{{ t .Lang "dashboard.group.edit" }}</button>

@@ -57,11 +57,15 @@ func main() {
 	userRepo := repository.NewUserRepository(database)
 	groupRepo := repository.NewNavGroupRepository(database)
 	linkRepo := repository.NewNavLinkRepository(database)
+	faviconCacheRepo := repository.NewFaviconCacheRepository(database)
+	thumbnailCacheRepo := repository.NewThumbnailCacheRepository(database)
 	settingRepo := repository.NewSettingRepository(database)
 
 	authService := service.NewAuthService(userRepo)
-	dashboardService := service.NewDashboardService(groupRepo, linkRepo, settingRepo)
+	dashboardService := service.NewDashboardService(groupRepo, linkRepo, settingRepo, cfg.Storage.UploadDir)
 	navService := service.NewNavigationService(groupRepo, linkRepo)
+	faviconService := service.NewFaviconService(linkRepo, faviconCacheRepo, cfg.Storage.UploadDir, log)
+	thumbnailService := service.NewThumbnailService(linkRepo, thumbnailCacheRepo, settingRepo, cfg.Storage.UploadDir, log)
 	bookmarkImportService := service.NewBookmarkImportService(navService, cfg.Storage.UploadDir)
 	settingService := service.NewSettingService(settingRepo)
 	weatherService := service.NewWeatherService(settingRepo)
@@ -77,8 +81,8 @@ func main() {
 
 	authHandler := handler.NewAuthHandler(renderer, authService, loginRateLimiter, log)
 	dashboardHandler := handler.NewDashboardHandler(renderer, dashboardService, authService)
-	navHandler := handler.NewNavigationHandler(renderer, navService, log, cfg.Storage.UploadDir)
-	settingHandler := handler.NewSettingHandler(renderer, settingService, authService, backupService, bookmarkImportService, cfg.Storage.UploadDir, log)
+	navHandler := handler.NewNavigationHandler(renderer, navService, faviconService, thumbnailService, log, cfg.Storage.UploadDir)
+	settingHandler := handler.NewSettingHandler(renderer, settingService, authService, backupService, bookmarkImportService, faviconService, thumbnailService, cfg.Storage.UploadDir, log)
 	systemHandler := handler.NewSystemHandler(log, weatherService)
 
 	engine := router.New(cfg, log, renderer, authHandler, dashboardHandler, navHandler, settingHandler, systemHandler)
@@ -97,9 +101,14 @@ func main() {
 		}
 	}()
 
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+	go faviconService.Start(workerCtx)
+	go thumbnailService.Start(workerCtx)
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+	workerCancel()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

@@ -33,7 +33,9 @@ var allowedRestoreSettingKeys = map[string]struct{}{
 	dashboardBlurKey:            {},
 	dashboardOverlayOpacityKey:  {},
 	dashboardTaglineKey:         {},
+	dashboardDescriptionKey:     {},
 	dashboardWeatherLocationKey: {},
+	dashboardThumbnailBgKey:     {},
 }
 
 // BackupService creates downloadable backup archives.
@@ -312,6 +314,8 @@ func collectBackupAssetPaths(uploadDir, backgroundValue string, groups []model.N
 	for _, group := range groups {
 		for _, link := range group.NavLinks {
 			add(link.Icon)
+			add(link.IconCachedPath)
+			add(link.ThumbnailCachedPath)
 		}
 	}
 

@@ -1,21 +1,22 @@
 {{ define "dashboard/link_tile" }}
-<li class="dashboard-link" data-link-id="{{ .ID }}">
+<li
+  class="dashboard-link"
+  data-link-id="{{ .ID }}"
+  data-search-text="{{ .Title }} {{ .Description }}">
   <div class="link-shell">
-    <a class="dashboard-link-tile" href="{{ .URL }}" target="_blank" rel="noreferrer" data-panel-toggle="edit-link-{{ .ID }}">
-      <span class="link-icon {{ if not .Icon }}letter-icon{{ end }}">
-        {{ if .Icon }}
-        <img src="{{ .Icon }}" alt="{{ .Title }}">
+    <a class="dashboard-link-tile{{ if and .ThumbnailCachedPath .UseThumbnailBackground }} has-thumbnail-bg{{ end }}" href="{{ .URL }}" target="_blank" rel="noreferrer" data-panel-toggle="edit-link-{{ .ID }}" style="--tile-accent: {{ .ThemeAccentColor }}; --tile-bg-start: {{ .ThemeBgStartColor }}; --tile-bg-end: {{ .ThemeBgEndColor }}; --tile-border: {{ .ThemeBorderColor }}; --tile-text: {{ .ThemeTextColor }};{{ if and .ThumbnailCachedPath .UseThumbnailBackground }} --link-thumbnail: url('{{ .ThumbnailCachedPath }}');{{ end }}">
+      <span class="link-icon {{ if not .IconCachedPath }}letter-icon{{ end }}">
+        {{ if .IconCachedPath }}
+        <img src="{{ .IconCachedPath }}" alt="{{ .Title }}">
         {{ else }}
         {{ initial .Title }}
         {{ end }}
       </span>
       <span class="link-labels">
         <strong>{{ .Title }}</strong>
-        {{ if .Description }}
-        <span class="muted">{{ .Description }}</span>
-        {{ end }}
       </span>
     </a>
+    <button class="favorite-toggle" type="button" data-favorite-toggle aria-label="Toggle favorite" title="Favorite"></button>
   </div>
   {{ if .Description }}
   <div class="link-hover-detail">{{ .Description }}</div>

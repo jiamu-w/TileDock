@@ -29,7 +29,7 @@ func New(path string) (*gorm.DB, error) {
 
 // AutoMigrate creates required tables.
 func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&model.User{}, &model.NavGroup{}, &model.NavLink{}, &model.Setting{})
+	return db.AutoMigrate(&model.User{}, &model.NavGroup{}, &model.NavLink{}, &model.FaviconCache{}, &model.ThumbnailCache{}, &model.Setting{})
 }
 
 // SeedAdmin initializes the default admin account.

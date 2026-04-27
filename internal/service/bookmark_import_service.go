@@ -53,12 +53,10 @@ func (s *BookmarkImportService) ImportHTML(ctx context.Context, reader io.Reader
 		result.GroupCount++
 
 		for _, link := range group.Links {
-			iconPath, _ := FetchWebsiteIcon(ctx, link.URL, s.uploadDir)
-			err := s.nav.CreateLink(ctx, LinkInput{
+			_, err := s.nav.CreateLink(ctx, LinkInput{
 				GroupID:   groupID,
 				Title:     link.Title,
 				URL:       link.URL,
-				Icon:      iconPath,
 				OpenInNew: true,
 			})
 			if err != nil {

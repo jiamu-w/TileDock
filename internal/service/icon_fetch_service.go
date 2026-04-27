@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/draw"
@@ -30,6 +31,7 @@ const (
 	maxIconHeight      = 128
 	iconWebPQuality    = 84
 	maxFetchedIconSize = 5 << 20
+	maxFetchedHTMLSize = 1 << 20
 )
 
 // FetchWebsiteIcon tries to fetch, optimize, and store a website favicon locally.
@@ -46,7 +48,13 @@ func FetchWebsiteIcon(ctx context.Context, rawURL, uploadDir string) (string, er
 
 	client := &http.Client{Timeout: 8 * time.Second}
 	candidates := collectIconCandidates(ctx, client, pageURL)
-	candidates = append(candidates, pageURL.Scheme+"://"+pageURL.Host+"/favicon.ico")
+	candidates = append(candidates,
+		pageURL.Scheme+"://"+pageURL.Host+"/favicon.ico",
+		pageURL.Scheme+"://"+pageURL.Host+"/favicon.png",
+		pageURL.Scheme+"://"+pageURL.Host+"/apple-touch-icon.png",
+		"https://www.google.com/s2/favicons?domain="+neturl.QueryEscape(pageURL.Host)+"&sz=128",
+		"https://icons.duckduckgo.com/ip3/"+pageURL.Host+".ico",
+	)
 
 	seen := make(map[string]struct{})
 	for _, candidate := range candidates {
@@ -84,12 +92,13 @@ func collectIconCandidates(ctx context.Context, client *http.Client, pageURL *ne
 		return nil
 	}
 
-	doc, err := html.Parse(io.LimitReader(resp.Body, 1<<20))
+	doc, err := html.Parse(io.LimitReader(resp.Body, maxFetchedHTMLSize))
 	if err != nil {
 		return nil
 	}
 
 	var candidates []string
+	var manifests []string
 	var walk func(*html.Node)
 	walk = func(node *html.Node) {
 		if node.Type == html.ElementNode && node.Data == "link" {
@@ -107,6 +116,11 @@ func collectIconCandidates(ctx context.Context, client *http.Client, pageURL *ne
 					candidates = append(candidates, resolved)
 				}
 			}
+			if hrefValue != "" && strings.Contains(relValue, "manifest") {
+				if resolved := resolveIconURL(pageURL, hrefValue); resolved != "" {
+					manifests = append(manifests, resolved)
+				}
+			}
 		}
 		for child := node.FirstChild; child != nil; child = child.NextSibling {
 			walk(child)
@@ -114,6 +128,80 @@ func collectIconCandidates(ctx context.Context, client *http.Client, pageURL *ne
 	}
 	walk(doc)
 
+	for _, manifestURL := range manifests {
+		candidates = append(candidates, collectManifestIconCandidates(ctx, client, pageURL, manifestURL)...)
+	}
+
+	return candidates
+}
+
+type webManifest struct {
+	Icons []struct {
+		Src   string `json:"src"`
+		Sizes string `json:"sizes"`
+	} `json:"icons"`
+}
+
+func collectManifestIconCandidates(ctx context.Context, client *http.Client, pageURL *neturl.URL, manifestURL string) []string {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, manifestURL, nil)
+	if err != nil {
+		return nil
+	}
+	manifestBase, err := neturl.Parse(manifestURL)
+	if err != nil {
+		manifestBase = pageURL
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+
+	payload, err := readLimited(resp.Body, maxFetchedHTMLSize)
+	if err != nil {
+		return nil
+	}
+
+	var manifest webManifest
+	if err := json.Unmarshal(payload, &manifest); err != nil {
+		return nil
+	}
+
+	type candidate struct {
+		url   string
+		score int
+	}
+	items := make([]candidate, 0, len(manifest.Icons))
+	for _, icon := range manifest.Icons {
+		src := strings.TrimSpace(icon.Src)
+		if src == "" {
+			continue
+		}
+		resolved := resolveIconURL(manifestBase, src)
+		if resolved == "" {
+			continue
+		}
+		score := 0
+		if strings.Contains(icon.Sizes, "128") || strings.Contains(icon.Sizes, "192") || strings.Contains(icon.Sizes, "512") {
+			score = 1
+		}
+		items = append(items, candidate{url: resolved, score: score})
+	}
+
+	candidates := make([]string, 0, len(items))
+	for _, item := range items {
+		if item.score > 0 {
+			candidates = append(candidates, item.url)
+		}
+	}
+	for _, item := range items {
+		if item.score == 0 {
+			candidates = append(candidates, item.url)
+		}
+	}
 	return candidates
 }
 
@@ -141,7 +229,7 @@ func fetchAndStoreIconCandidate(ctx context.Context, client *http.Client, candid
 		return "", fmt.Errorf("icon request returned %d", resp.StatusCode)
 	}
 
-	payload, err := io.ReadAll(io.LimitReader(resp.Body, maxFetchedIconSize))
+	payload, err := readLimited(resp.Body, maxFetchedIconSize)
 	if err != nil {
 		return "", err
 	}
@@ -154,6 +242,9 @@ func fetchAndStoreIconCandidate(ctx context.Context, client *http.Client, candid
 	case strings.Contains(contentType, "image/x-icon"), strings.Contains(contentType, "image/vnd.microsoft.icon"):
 		return saveRawIcon(uploadDir, payload, ".ico")
 	case strings.Contains(contentType, "image/"):
+		if strings.Contains(contentType, "svg") {
+			return "", fmt.Errorf("svg icons are not cached")
+		}
 		imageData, _, err := image.Decode(bytes.NewReader(payload))
 		if err != nil {
 			return "", err
@@ -172,6 +263,17 @@ func fetchAndStoreIconCandidate(ctx context.Context, client *http.Client, candid
 		optimized := resizeImage(imageData, maxIconWidth, maxIconHeight)
 		return saveOptimizedIcon(uploadDir, optimized)
 	}
+}
+
+func readLimited(reader io.Reader, maxBytes int64) ([]byte, error) {
+	payload, err := io.ReadAll(io.LimitReader(reader, maxBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(payload)) > maxBytes {
+		return nil, fmt.Errorf("response exceeds %d bytes", maxBytes)
+	}
+	return payload, nil
 }
 
 func saveOptimizedIcon(uploadDir string, img image.Image) (string, error) {

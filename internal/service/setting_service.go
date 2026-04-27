@@ -16,7 +16,9 @@ const (
 	dashboardBlurKey            = "dashboard_background_blur"
 	dashboardOverlayOpacityKey  = "dashboard_overlay_opacity"
 	dashboardTaglineKey         = "dashboard_tagline"
+	dashboardDescriptionKey     = "dashboard_description"
 	dashboardWeatherLocationKey = "dashboard_weather_location"
+	dashboardThumbnailBgKey     = "dashboard_thumbnail_background_enabled"
 	defaultDashboardBlur        = 8
 	defaultDashboardOverlay     = 0.38
 	maxDashboardOverlay         = 0.85
@@ -34,12 +36,14 @@ func NewSettingService(repo *repository.SettingRepository) *SettingService {
 
 // SettingsPageData stores settings page data.
 type SettingsPageData struct {
-	DashboardBackground string
-	DashboardBlur       int
-	DashboardOverlay    float64
-	DashboardTagline    string
-	WeatherLocation     string
-	Settings            []model.Setting
+	DashboardBackground  string
+	DashboardBlur        int
+	DashboardOverlay     float64
+	DashboardTagline     string
+	DashboardDescription string
+	WeatherLocation      string
+	ThumbnailBackground  bool
+	Settings             []model.Setting
 }
 
 // List returns settings.
@@ -65,7 +69,15 @@ func (s *SettingService) List(ctx context.Context) (*SettingsPageData, error) {
 	if err != nil {
 		return nil, err
 	}
+	description, err := s.repo.FindByKey(ctx, dashboardDescriptionKey)
+	if err != nil {
+		return nil, err
+	}
 	weatherLocation, err := s.repo.FindByKey(ctx, dashboardWeatherLocationKey)
+	if err != nil {
+		return nil, err
+	}
+	thumbnailBackground, err := s.repo.FindByKey(ctx, dashboardThumbnailBgKey)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +103,14 @@ func (s *SettingService) List(ctx context.Context) (*SettingsPageData, error) {
 	if tagline != nil {
 		data.DashboardTagline = strings.TrimSpace(tagline.Value)
 	}
+	if description != nil {
+		data.DashboardDescription = strings.TrimSpace(description.Value)
+	}
 	if weatherLocation != nil {
 		data.WeatherLocation = strings.TrimSpace(weatherLocation.Value)
+	}
+	if thumbnailBackground != nil {
+		data.ThumbnailBackground = settingBool(thumbnailBackground.Value)
 	}
 	return data, nil
 }
@@ -148,10 +166,39 @@ func (s *SettingService) SaveDashboardBranding(ctx context.Context, tagline stri
 	})
 }
 
+// SaveDashboardDescription stores the dashboard summary text.
+func (s *SettingService) SaveDashboardDescription(ctx context.Context, description string) error {
+	return s.repo.Upsert(ctx, &model.Setting{
+		Key:   dashboardDescriptionKey,
+		Value: strings.TrimSpace(description),
+	})
+}
+
 // SaveDashboardWeatherLocation stores the dashboard weather location.
 func (s *SettingService) SaveDashboardWeatherLocation(ctx context.Context, location string) error {
 	return s.repo.Upsert(ctx, &model.Setting{
 		Key:   dashboardWeatherLocationKey,
 		Value: strings.TrimSpace(location),
 	})
+}
+
+// SaveDashboardThumbnailBackground stores whether link cards use cached website thumbnails.
+func (s *SettingService) SaveDashboardThumbnailBackground(ctx context.Context, enabled bool) error {
+	value := "false"
+	if enabled {
+		value = "true"
+	}
+	return s.repo.Upsert(ctx, &model.Setting{
+		Key:   dashboardThumbnailBgKey,
+		Value: value,
+	})
+}
+
+func settingBool(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "true", "yes", "on", "enabled":
+		return true
+	default:
+		return false
+	}
 }

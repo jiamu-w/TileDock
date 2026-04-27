@@ -25,10 +25,19 @@
               <input name="dashboard_tagline" value="{{ .Data.DashboardTagline }}" placeholder="TileDock">
             </label>
             <label>
+              <span>{{ if eq .Lang "zh" }}首页说明{{ else if eq .Lang "ja" }}ホーム説明{{ else }}Dashboard Description{{ end }}</span>
+              <input name="dashboard_description" value="{{ .Data.DashboardDescription }}" placeholder="{{ if eq .Lang "zh" }}集中管理常用网站、AI 工具、课程和本地服务。{{ else }}Frequent sites, AI tools, courses, and local services in one place.{{ end }}">
+            </label>
+            <label>
               <span>{{ t .Lang "settings.weather.location" }}</span>
               <input name="weather_location" value="{{ .Data.WeatherLocation }}" placeholder="{{ t .Lang "settings.weather.location_placeholder" }}">
               <small class="muted">{{ t .Lang "settings.weather.desc" }}</small>
             </label>
+            <label class="inline">
+              <input name="thumbnail_background" type="checkbox" {{ if .Data.ThumbnailBackground }}checked{{ end }}>
+              {{ if eq .Lang "zh" }}使用网站页面缩略图作为链接卡片背景{{ else if eq .Lang "ja" }}サイトのサムネイルをリンクカード背景に使う{{ else }}Use website thumbnails as link card backgrounds{{ end }}
+            </label>
+            <p class="muted">{{ if eq .Lang "zh" }}开启后会在后台异步生成并缓存缩略图；未完成或失败的网站仍使用默认卡片背景。{{ else if eq .Lang "ja" }}有効にするとバックグラウンドでサムネイルを生成・キャッシュします。未完了または失敗したサイトは既定背景を使います。{{ else }}When enabled, thumbnails are generated and cached in the background. Cards keep the default background until a thumbnail is ready.{{ end }}</p>
             <label>
               <span>{{ t .Lang "settings.background.upload" }}</span>
               <input name="dashboard_background_file" type="file" accept=".jpg,.jpeg,.png,.webp,.gif">
@@ -130,6 +139,18 @@
             <p class="muted">{{ t .Lang "settings.bookmarks.note" }}</p>
             <div class="actions">
               <button class="ghost-btn" type="submit">{{ t .Lang "settings.bookmarks.submit" }}</button>
+            </div>
+          </form>
+        </section>
+        <section class="settings-section stack">
+          <div>
+            <h4>{{ if eq .Lang "zh" }}网站图标{{ else if eq .Lang "ja" }}サイトアイコン{{ else }}Website Icons{{ end }}</h4>
+            <p class="muted">{{ if eq .Lang "zh" }}重新扫描尚未获得缓存图标的链接，任务会在后台分批执行。{{ else if eq .Lang "ja" }}キャッシュ済みアイコンがないリンクをバックグラウンドで再スキャンします。{{ else }}Rescan links without cached icons. The work runs in background batches.{{ end }}</p>
+          </div>
+          <form method="post" action="/settings/favicons/rescan" class="stack">
+            <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+            <div class="actions">
+              <button class="ghost-btn" type="submit">{{ if eq .Lang "zh" }}重新扫描网站图标{{ else if eq .Lang "ja" }}サイトアイコンを再スキャン{{ else }}Rescan Website Icons{{ end }}</button>
             </div>
           </form>
         </section>
