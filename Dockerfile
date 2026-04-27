@@ -1,5 +1,7 @@
 FROM golang:1.26.1-alpine AS builder
 
+LABEL org.opencontainers.image.source="https://github.com/jiamu-w/TileDock"
+
 WORKDIR /src
 
 RUN apk add --no-cache gcc musl-dev
