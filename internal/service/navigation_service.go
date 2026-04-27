@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/url"
 	"strings"
+	"time"
 
 	"panel/internal/model"
 	"panel/internal/repository"
@@ -127,27 +128,49 @@ func (s *NavigationService) ResizeGroup(ctx context.Context, id string, size Gro
 	return s.groupRepo.UpdateGridSpan(ctx, id, size.Cols, size.Rows)
 }
 
-// CreateLink creates a new link.
-func (s *NavigationService) CreateLink(ctx context.Context, input LinkInput) error {
+// CreateLink creates a new link and returns its ID.
+func (s *NavigationService) CreateLink(ctx context.Context, input LinkInput) (string, error) {
 	if err := input.Validate(); err != nil {
-		return err
+		return "", err
+	}
+
+	now := time.Now()
+	iconStatus := IconStatusPending
+	var nextCheck *time.Time = &now
+	iconCachedPath := strings.TrimSpace(input.IconCachedPath)
+	if iconCachedPath != "" {
+		iconStatus = IconStatusSuccess
+		next := now.Add(30 * 24 * time.Hour)
+		nextCheck = &next
 	}
 
 	link := &model.NavLink{
-		GroupID:     strings.TrimSpace(input.GroupID),
-		Title:       strings.TrimSpace(input.Title),
-		URL:         strings.TrimSpace(input.URL),
-		Description: strings.TrimSpace(input.Description),
-		Icon:        strings.TrimSpace(input.Icon),
-		OpenInNew:   input.OpenInNew,
-		SortOrder:   0,
+		GroupID:           strings.TrimSpace(input.GroupID),
+		Title:             strings.TrimSpace(input.Title),
+		URL:               strings.TrimSpace(input.URL),
+		Description:       strings.TrimSpace(input.Description),
+		Icon:              strings.TrimSpace(input.Icon),
+		IconCachedPath:    iconCachedPath,
+		ThemeAccentColor:  strings.TrimSpace(input.ThemeAccentColor),
+		ThemeBgStartColor: strings.TrimSpace(input.ThemeBgStartColor),
+		ThemeBgEndColor:   strings.TrimSpace(input.ThemeBgEndColor),
+		ThemeBorderColor:  strings.TrimSpace(input.ThemeBorderColor),
+		ThemeTextColor:    strings.TrimSpace(input.ThemeTextColor),
+		IconStatus:        iconStatus,
+		IconNextCheckAt:   nextCheck,
+		ThumbnailStatus:   IconStatusPending,
+		OpenInNew:         input.OpenInNew,
+		SortOrder:         0,
 	}
 	sortOrder, err := s.linkRepo.NextSortOrder(ctx, link.GroupID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	link.SortOrder = sortOrder
-	return s.linkRepo.Create(ctx, link)
+	if err := s.linkRepo.Create(ctx, link); err != nil {
+		return "", err
+	}
+	return link.ID, nil
 }
 
 // UpdateLink updates a link.
@@ -166,6 +189,30 @@ func (s *NavigationService) UpdateLink(ctx context.Context, id string, input Lin
 	link.URL = strings.TrimSpace(input.URL)
 	link.Description = strings.TrimSpace(input.Description)
 	link.Icon = strings.TrimSpace(input.Icon)
+	link.IconCachedPath = strings.TrimSpace(input.IconCachedPath)
+	link.ThemeAccentColor = strings.TrimSpace(input.ThemeAccentColor)
+	link.ThemeBgStartColor = strings.TrimSpace(input.ThemeBgStartColor)
+	link.ThemeBgEndColor = strings.TrimSpace(input.ThemeBgEndColor)
+	link.ThemeBorderColor = strings.TrimSpace(input.ThemeBorderColor)
+	link.ThemeTextColor = strings.TrimSpace(input.ThemeTextColor)
+	link.ThumbnailCachedPath = strings.TrimSpace(input.ThumbnailCachedPath)
+	if input.IconCachedPath != "" {
+		now := time.Now()
+		next := now.Add(30 * 24 * time.Hour)
+		link.IconStatus = IconStatusSuccess
+		link.IconLastCheckedAt = &now
+		link.IconNextCheckAt = &next
+		link.IconFailCount = 0
+	} else if input.ScheduleIconFetch {
+		now := time.Now()
+		link.IconStatus = IconStatusPending
+		link.IconNextCheckAt = &now
+	}
+	if input.ScheduleThumbnailFetch {
+		now := time.Now()
+		link.ThumbnailStatus = IconStatusPending
+		link.ThumbnailNextCheckAt = &now
+	}
 	link.OpenInNew = input.OpenInNew
 	return s.linkRepo.Update(ctx, link)
 }
@@ -219,12 +266,21 @@ func (s *NavigationService) Reorder(ctx context.Context, req ReorderRequest) err
 
 // LinkInput stores link form input.
 type LinkInput struct {
-	GroupID     string
-	Title       string
-	URL         string
-	Description string
-	Icon        string
-	OpenInNew   bool
+	GroupID                string
+	Title                  string
+	URL                    string
+	Description            string
+	Icon                   string
+	IconCachedPath         string
+	ThemeAccentColor       string
+	ThemeBgStartColor      string
+	ThemeBgEndColor        string
+	ThemeBorderColor       string
+	ThemeTextColor         string
+	ThumbnailCachedPath    string
+	ScheduleIconFetch      bool
+	ScheduleThumbnailFetch bool
+	OpenInNew              bool
 }
 
 // Validate checks link input.

@@ -13,6 +13,8 @@ const (
 	BackgroundsDirName = "backgrounds"
 	// IconsDirName is the icon asset subdirectory.
 	IconsDirName = "icons"
+	// ThumbnailsDirName is the website thumbnail asset subdirectory.
+	ThumbnailsDirName = "thumbnails"
 )
 
 // BackgroundsDir returns the local directory for background uploads.
@@ -23,6 +25,11 @@ func BackgroundsDir(uploadDir string) string {
 // IconsDir returns the local directory for icon uploads.
 func IconsDir(uploadDir string) string {
 	return filepath.Join(uploadDir, IconsDirName)
+}
+
+// ThumbnailsDir returns the local directory for website thumbnail uploads.
+func ThumbnailsDir(uploadDir string) string {
+	return filepath.Join(uploadDir, ThumbnailsDirName)
 }
 
 // IsBackgroundPublicPath reports whether the given public path points to a background upload.
@@ -53,6 +60,21 @@ func IsIconPublicPath(raw string) bool {
 	}
 
 	return relative == IconsDirName || strings.HasPrefix(relative, IconsDirName+"/")
+}
+
+// IsThumbnailPublicPath reports whether the given public path points to a thumbnail upload.
+func IsThumbnailPublicPath(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || !strings.HasPrefix(raw, PublicUploadsPrefix) {
+		return false
+	}
+
+	relative := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(raw, PublicUploadsPrefix)))
+	if relative == "." || relative == "" || strings.HasPrefix(relative, "..") {
+		return false
+	}
+
+	return relative == ThumbnailsDirName || strings.HasPrefix(relative, ThumbnailsDirName+"/")
 }
 
 // PublicUploadPath returns the public URL for a runtime upload.

@@ -19,16 +19,18 @@ type DashboardStats struct {
 
 // DashboardData stores dashboard view data.
 type DashboardData struct {
-	Stats            DashboardStats
-	Groups           []model.NavGroup
-	CurrentUsername  string
-	CanManage        bool
-	DashboardTagline string
-	WeatherLocation  string
-	DashboardBg      string
-	DashboardBlur    int
-	DashboardOverlay float64
-	DashboardCSS     string
+	Stats                DashboardStats
+	Groups               []model.NavGroup
+	CurrentUsername      string
+	CanManage            bool
+	DashboardTagline     string
+	DashboardDescription string
+	WeatherLocation      string
+	ThumbnailBackground  bool
+	DashboardBg          string
+	DashboardBlur        int
+	DashboardOverlay     float64
+	DashboardCSS         string
 }
 
 // DashboardService handles home page data.
@@ -36,6 +38,7 @@ type DashboardService struct {
 	groupRepo   *repository.NavGroupRepository
 	linkRepo    *repository.NavLinkRepository
 	settingRepo *repository.SettingRepository
+	uploadDir   string
 }
 
 // NewDashboardService creates a service.
@@ -43,11 +46,13 @@ func NewDashboardService(
 	groupRepo *repository.NavGroupRepository,
 	linkRepo *repository.NavLinkRepository,
 	settingRepo *repository.SettingRepository,
+	uploadDir string,
 ) *DashboardService {
 	return &DashboardService{
 		groupRepo:   groupRepo,
 		linkRepo:    linkRepo,
 		settingRepo: settingRepo,
+		uploadDir:   uploadDir,
 	}
 }
 
@@ -66,6 +71,14 @@ func (s *DashboardService) GetDashboardData(ctx context.Context, currentUsername
 		for linkIndex := range groups[groupIndex].NavLinks {
 			groups[groupIndex].NavLinks[linkIndex].Lang = groups[groupIndex].Lang
 			groups[groupIndex].NavLinks[linkIndex].CSRFToken = groups[groupIndex].CSRFToken
+			if !HasStoredTheme(groups[groupIndex].NavLinks[linkIndex]) {
+				ApplyLinkTheme(&groups[groupIndex].NavLinks[linkIndex], BuildLinkTheme(
+					s.uploadDir,
+					groups[groupIndex].NavLinks[linkIndex].IconCachedPath,
+					groups[groupIndex].NavLinks[linkIndex].URL,
+					groups[groupIndex].NavLinks[linkIndex].Title,
+				))
+			}
 		}
 		totalLinks += len(groups[groupIndex].NavLinks)
 	}
@@ -86,7 +99,15 @@ func (s *DashboardService) GetDashboardData(ctx context.Context, currentUsername
 	if err != nil {
 		return nil, err
 	}
+	descriptionSetting, err := s.settingRepo.FindByKey(ctx, dashboardDescriptionKey)
+	if err != nil {
+		return nil, err
+	}
 	weatherLocationSetting, err := s.settingRepo.FindByKey(ctx, dashboardWeatherLocationKey)
+	if err != nil {
+		return nil, err
+	}
+	thumbnailBackgroundSetting, err := s.settingRepo.FindByKey(ctx, dashboardThumbnailBgKey)
 	if err != nil {
 		return nil, err
 	}
@@ -123,9 +144,24 @@ func (s *DashboardService) GetDashboardData(ctx context.Context, currentUsername
 	if taglineSetting != nil && strings.TrimSpace(taglineSetting.Value) != "" {
 		taglineValue = strings.TrimSpace(taglineSetting.Value)
 	}
+	descriptionValue := defaultDashboardDescription(lang)
+	if descriptionSetting != nil && strings.TrimSpace(descriptionSetting.Value) != "" {
+		descriptionValue = strings.TrimSpace(descriptionSetting.Value)
+	}
 	weatherLocationValue := ""
 	if weatherLocationSetting != nil {
 		weatherLocationValue = strings.TrimSpace(weatherLocationSetting.Value)
+	}
+	thumbnailBackgroundValue := false
+	if thumbnailBackgroundSetting != nil {
+		thumbnailBackgroundValue = settingBool(thumbnailBackgroundSetting.Value)
+	}
+	if thumbnailBackgroundValue {
+		for groupIndex := range groups {
+			for linkIndex := range groups[groupIndex].NavLinks {
+				groups[groupIndex].NavLinks[linkIndex].UseThumbnailBackground = true
+			}
+		}
 	}
 
 	css := fmt.Sprintf(".dashboard-page::before { background: rgba(0, 0, 0, %.2f); backdrop-filter: blur(%dpx); -webkit-backdrop-filter: blur(%dpx); }", overlayValue, blurValue, blurValue)
@@ -138,16 +174,29 @@ func (s *DashboardService) GetDashboardData(ctx context.Context, currentUsername
 			GroupCount: len(groups),
 			LinkCount:  totalLinks,
 		},
-		Groups:           groups,
-		CurrentUsername:  strings.TrimSpace(currentUsername),
-		CanManage:        strings.TrimSpace(currentUsername) != "",
-		DashboardTagline: taglineValue,
-		WeatherLocation:  weatherLocationValue,
-		DashboardBg:      backgroundValue,
-		DashboardBlur:    blurValue,
-		DashboardOverlay: overlayValue,
-		DashboardCSS:     css,
+		Groups:               groups,
+		CurrentUsername:      strings.TrimSpace(currentUsername),
+		CanManage:            strings.TrimSpace(currentUsername) != "",
+		DashboardTagline:     taglineValue,
+		DashboardDescription: descriptionValue,
+		WeatherLocation:      weatherLocationValue,
+		ThumbnailBackground:  thumbnailBackgroundValue,
+		DashboardBg:          backgroundValue,
+		DashboardBlur:        blurValue,
+		DashboardOverlay:     overlayValue,
+		DashboardCSS:         css,
 	}, nil
+}
+
+func defaultDashboardDescription(lang string) string {
+	switch strings.TrimSpace(lang) {
+	case "zh":
+		return "集中管理常用网站、AI 工具、课程和本地服务。"
+	case "ja":
+		return "Frequent sites, AI tools, courses, and local services in one place."
+	default:
+		return "Frequent sites, AI tools, courses, and local services in one place."
+	}
 }
 
 func assignGroupGridSpan(group *model.NavGroup) {

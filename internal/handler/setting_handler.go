@@ -40,13 +40,15 @@ const (
 
 // SettingHandler handles settings pages.
 type SettingHandler struct {
-	renderer  *view.Renderer
-	service   *service.SettingService
-	auth      *service.AuthService
-	backup    *service.BackupService
-	bookmarks *service.BookmarkImportService
-	uploadDir string
-	log       *slog.Logger
+	renderer   *view.Renderer
+	service    *service.SettingService
+	auth       *service.AuthService
+	backup     *service.BackupService
+	bookmarks  *service.BookmarkImportService
+	favicons   *service.FaviconService
+	thumbnails *service.ThumbnailService
+	uploadDir  string
+	log        *slog.Logger
 }
 
 // NewSettingHandler creates a handler.
@@ -56,17 +58,21 @@ func NewSettingHandler(
 	auth *service.AuthService,
 	backup *service.BackupService,
 	bookmarks *service.BookmarkImportService,
+	favicons *service.FaviconService,
+	thumbnails *service.ThumbnailService,
 	uploadDir string,
 	log *slog.Logger,
 ) *SettingHandler {
 	return &SettingHandler{
-		renderer:  renderer,
-		service:   service,
-		auth:      auth,
-		backup:    backup,
-		bookmarks: bookmarks,
-		uploadDir: uploadDir,
-		log:       log,
+		renderer:   renderer,
+		service:    service,
+		auth:       auth,
+		backup:     backup,
+		bookmarks:  bookmarks,
+		favicons:   favicons,
+		thumbnails: thumbnails,
+		uploadDir:  uploadDir,
+		log:        log,
 	}
 }
 
@@ -124,9 +130,26 @@ func (h *SettingHandler) Save(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if err := h.service.SaveDashboardDescription(c.Request.Context(), c.PostForm("dashboard_description")); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	if err := h.service.SaveDashboardWeatherLocation(c.Request.Context(), c.PostForm("weather_location")); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	thumbnailBackground := c.PostForm("thumbnail_background") == "on"
+	if err := h.service.SaveDashboardThumbnailBackground(c.Request.Context(), thumbnailBackground); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if thumbnailBackground && h.thumbnails != nil {
+		count, err := h.thumbnails.RescanMissing(c.Request.Context())
+		if err != nil {
+			h.log.Warn("schedule missing thumbnails failed", "error", err)
+		} else if count > 0 {
+			h.log.Info("scheduled missing thumbnails", "count", count)
+		}
 	}
 	if backgroundPath != previousBackgroundPath {
 		if err := removeBackgroundFile(h.uploadDir, previousBackgroundPath); err != nil {
@@ -279,6 +302,30 @@ func (h *SettingHandler) ImportBookmarks(c *gin.Context) {
 
 	auditLog(h.log, c, "bookmarks.import", "groups", result.GroupCount, "links", result.LinkCount, "filename", file.Filename)
 	redirectWithPanelMessage(c, lang, i18n.T(lang, "settings.bookmarks.success.imported"), "")
+}
+
+// RescanFavicons schedules missing website icons for background scanning.
+func (h *SettingHandler) RescanFavicons(c *gin.Context) {
+	lang := i18n.FromContext(c)
+	if h.favicons == nil {
+		redirectWithPanelMessage(c, lang, "", "favicon service unavailable")
+		return
+	}
+
+	count, err := h.favicons.RescanMissing(c.Request.Context())
+	if err != nil {
+		redirectWithPanelMessage(c, lang, "", err.Error())
+		return
+	}
+
+	auditLog(h.log, c, "favicons.rescan_missing", "count", count)
+	message := fmt.Sprintf("已将 %d 个缺少图标的网站加入后台扫描队列。", count)
+	if lang == "en" {
+		message = fmt.Sprintf("Queued %d links without cached icons for background scanning.", count)
+	} else if lang == "ja" {
+		message = fmt.Sprintf("キャッシュ済みアイコンのない %d 件をバックグラウンドスキャンに追加しました。", count)
+	}
+	redirectWithPanelMessage(c, lang, message, "")
 }
 
 func saveBackgroundFile(c *gin.Context, uploadDir string, file *multipart.FileHeader) (string, error) {

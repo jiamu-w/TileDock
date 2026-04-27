@@ -13,10 +13,61 @@
   </style>
 </head>
 <body class="dashboard-page">
-  <div class="layout solo-layout">
-    <main class="content dashboard-content" data-dashboard-editor data-reorder-endpoint="/navigation/reorder">
-      <section class="page-header hero-card">
-        <div class="hero-center">
+  <header class="dashboard-topbar">
+    <a class="dashboard-brand" href="/?lang={{ .Lang }}" aria-label="TileDock home">
+      <img src="/static/img/tiledock-icon.svg" alt="">
+      <span>{{ if eq .Lang "zh" }}我的导航{{ else if eq .Lang "ja" }}My Dashboard{{ else }}My Dashboard{{ end }}</span>
+    </a>
+    <label class="dashboard-search">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        data-dashboard-search
+        autocomplete="off"
+        placeholder="{{ if eq .Lang "zh" }}搜索网站、描述、分类或标签{{ else if eq .Lang "ja" }}Search sites, descriptions, categories, or tags{{ else }}Search sites, descriptions, categories, or tags{{ end }}">
+    </label>
+    <div class="dashboard-actions">
+      <form method="get" action="/" class="language-select-form">
+        <select class="subtle-select" name="lang" onchange="this.form.submit()">
+          <option value="zh" {{ if eq .Lang "zh" }}selected{{ end }}>{{ t .Lang "lang.zh" }}</option>
+          <option value="en" {{ if eq .Lang "en" }}selected{{ end }}>{{ t .Lang "lang.en" }}</option>
+          <option value="ja" {{ if eq .Lang "ja" }}selected{{ end }}>{{ t .Lang "lang.ja" }}</option>
+        </select>
+      </form>
+      {{ if .Data.CanManage }}
+      <button class="ghost-btn" type="button" data-panel-toggle="dashboard-settings-panel">{{ t .Lang "dashboard.settings" }}</button>
+      <button class="primary-btn" type="button" data-edit-toggle data-edit-on="{{ t .Lang "dashboard.edit.enter" }}" data-edit-off="{{ t .Lang "dashboard.edit.exit" }}">{{ t .Lang "dashboard.edit.enter" }}</button>
+      {{ else }}
+      <a class="subtle-btn" href="/login?lang={{ .Lang }}">{{ t .Lang "dashboard.login_manage" }}</a>
+      {{ end }}
+    </div>
+  </header>
+
+  <div class="dashboard-app-shell">
+    <aside class="dashboard-category-sidebar" aria-label="Dashboard categories">
+      <button class="category-pill is-active" type="button" data-category-filter="all">
+        <span>{{ if eq .Lang "zh" }}全部{{ else if eq .Lang "ja" }}すべて{{ else }}All{{ end }}</span>
+        <small>{{ .Data.Stats.LinkCount }}</small>
+      </button>
+      <button class="category-pill" type="button" data-category-filter="favorites">
+        <span>{{ if eq .Lang "zh" }}常用{{ else if eq .Lang "ja" }}よく使う{{ else }}Favorites{{ end }}</span>
+        <small data-favorite-count>0</small>
+      </button>
+      {{ range .Data.Groups }}
+      <button class="category-pill" type="button" data-category-filter="{{ .ID }}">
+        <span>{{ .Name }}</span>
+        <small>{{ len .NavLinks }}</small>
+      </button>
+      {{ end }}
+    </aside>
+
+    <main class="content dashboard-content" data-dashboard-editor data-reorder-endpoint="/navigation/reorder" data-can-manage="{{ if .Data.CanManage }}true{{ else }}false{{ end }}">
+      <section class="dashboard-overview">
+        <div class="dashboard-heading">
+          <span class="eyebrow">{{ .Data.DashboardTagline }}</span>
+          <p class="muted" data-dashboard-section-desc>{{ .Data.DashboardDescription }}</p>
+        </div>
+        <div class="dashboard-meta">
           <div class="hero-clock" data-dashboard-clock data-lang="{{ .Lang }}">
             <div class="hero-clock-time">
               <span class="hero-clock-main-time">00:00</span>
@@ -47,12 +98,27 @@
         </div>
       </section>
 
-      <section class="stack">
+      <section class="stack dashboard-main-stack">
         {{ if .Data.CanManage }}
         <div class="toolbar edit-only">
           <span class="muted">{{ t .Lang "dashboard.toolbar" }}</span>
         </div>
         {{ end }}
+        <section
+          class="card dashboard-group dashboard-favorites-group"
+          data-favorites-section
+          data-group-id="favorites"
+          data-category-name="{{ if eq .Lang "zh" }}常用{{ else if eq .Lang "ja" }}よく使う{{ else }}Favorites{{ end }}"
+          data-search-text="{{ if eq .Lang "zh" }}常用 收藏 favorites{{ else }}favorites pinned{{ end }}"
+          hidden>
+          <div class="split dashboard-group-header">
+            <div class="dashboard-group-title">
+              <h2>{{ if eq .Lang "zh" }}常用{{ else if eq .Lang "ja" }}よく使う{{ else }}Favorites{{ end }}</h2>
+              <p class="muted" data-favorites-desc>0 {{ if eq .Lang "zh" }}个网站{{ else if eq .Lang "ja" }}サイト{{ else }}sites{{ end }}</p>
+            </div>
+          </div>
+          <ul class="dashboard-links" data-favorites-list></ul>
+        </section>
         <div class="dashboard-groups" id="dashboard-groups">
           {{ range .Data.Groups }}
           {{ template "dashboard/group_card" . }}
@@ -75,26 +141,15 @@
         {{ end }}
       </section>
 
+      <section class="dashboard-empty-state card" data-dashboard-empty hidden>
+        <h2>{{ if eq .Lang "zh" }}没有匹配的网站{{ else if eq .Lang "ja" }}一致するサイトがありません{{ else }}No matching sites{{ end }}</h2>
+        <p class="muted">{{ if eq .Lang "zh" }}换一个关键词，或切换到其他分类。{{ else if eq .Lang "ja" }}Try another keyword or category.{{ else }}Try another keyword or category.{{ end }}</p>
+      </section>
+
       <footer class="page-footer">
         <span class="eyebrow footer-tagline">{{ .Data.DashboardTagline }}</span>
       </footer>
     </main>
-  </div>
-
-  <div class="hero-actions hero-actions-floating">
-    <form method="get" action="/" class="language-select-form">
-      <select class="subtle-select" name="lang" onchange="this.form.submit()">
-        <option value="zh" {{ if eq .Lang "zh" }}selected{{ end }}>{{ t .Lang "lang.zh" }}</option>
-        <option value="en" {{ if eq .Lang "en" }}selected{{ end }}>{{ t .Lang "lang.en" }}</option>
-        <option value="ja" {{ if eq .Lang "ja" }}selected{{ end }}>{{ t .Lang "lang.ja" }}</option>
-      </select>
-    </form>
-    {{ if .Data.CanManage }}
-    <button class="ghost-btn" type="button" data-panel-toggle="dashboard-settings-panel">{{ t .Lang "dashboard.settings" }}</button>
-    <button class="primary-btn" type="button" data-edit-toggle data-edit-on="{{ t .Lang "dashboard.edit.enter" }}" data-edit-off="{{ t .Lang "dashboard.edit.exit" }}">{{ t .Lang "dashboard.edit.enter" }}</button>
-    {{ else }}
-    <a class="subtle-btn" href="/login?lang={{ .Lang }}">{{ t .Lang "dashboard.login_manage" }}</a>
-    {{ end }}
   </div>
 
   {{ if .Data.CanManage }}
@@ -113,6 +168,7 @@
   <script src="/static/js/url-cleanup.js"></script>
   <script src="/static/js/panel-actions.js"></script>
   <script src="/static/js/dashboard-editor.js"></script>
+  <script src="/static/js/dashboard-filter.js"></script>
   <script src="/static/js/dashboard-clock.js"></script>
   <script src="/static/js/dashboard-weather.js"></script>
 </body>

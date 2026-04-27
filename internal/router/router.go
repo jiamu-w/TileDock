@@ -77,6 +77,8 @@ func New(
 	authenticated.DELETE("/navigation/groups/:id", navHandler.DeleteGroup)
 	authenticated.POST("/navigation/links", navHandler.CreateLink)
 	authenticated.POST("/navigation/links/:id", navHandler.UpdateLink)
+	authenticated.POST("/navigation/links/:id/favicon/refresh", navHandler.RefreshLinkIcon)
+	authenticated.POST("/navigation/links/:id/thumbnail/refresh", navHandler.RefreshLinkThumbnail)
 	authenticated.DELETE("/navigation/links/:id", navHandler.DeleteLink)
 	authenticated.POST("/navigation/reorder", navHandler.Reorder)
 	authenticated.GET("/settings", settingHandler.Index)
@@ -86,6 +88,7 @@ func New(
 	authenticated.POST("/settings/backup", settingHandler.DownloadBackup)
 	authenticated.POST("/settings/restore", settingHandler.RestoreBackup)
 	authenticated.POST("/settings/bookmarks/import", settingHandler.ImportBookmarks)
+	authenticated.POST("/settings/favicons/rescan", settingHandler.RescanFavicons)
 
 	return engine
 }
