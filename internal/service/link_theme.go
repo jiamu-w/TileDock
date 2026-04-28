@@ -107,12 +107,13 @@ func buildLinkThemeFromSeed(rawURL, title string) LinkTheme {
 	hasher := fnv.New32a()
 	_, _ = hasher.Write([]byte(seed))
 	hue := float64(hasher.Sum32() % 360)
+	themeHue := shiftedThemeHue(hue)
 
 	return LinkTheme{
 		AccentColor:  hslHex(hue, 62, 60),
-		BgStartColor: hslHex(hue, 40, 26),
-		BgEndColor:   hslHex(math.Mod(hue+10, 360), 36, 16),
-		BorderColor:  hslHex(hue, 50, 44),
+		BgStartColor: hslHex(themeHue, 35, 22),
+		BgEndColor:   hslHex(themeHue, 35, 18),
+		BorderColor:  hslHex(themeHue, 24, 30),
 		TextColor:    "#F8FBFF",
 	}
 }
@@ -216,18 +217,33 @@ func dominantColor(img image.Image) (rgbColor, bool) {
 
 func themeFromColor(base rgbColor) LinkTheme {
 	h, s, l := rgbToHSL(base)
+	themeHue := shiftedThemeHue(h)
 
 	accentS := clampFloat(math.Max(s, 0.48), 0.48, 0.82)
 	accentL := clampFloat(math.Max(l, 0.56), 0.52, 0.68)
-	bgS := clampFloat(math.Max(s*0.62, 0.24), 0.24, 0.54)
-	borderS := clampFloat(math.Max(s*0.82, 0.34), 0.34, 0.72)
+	bgS := clampFloat(math.Max(s*0.42, 0.35), 0.20, 0.40)
+	borderS := clampFloat(math.Max(s*0.3, 0.22), 0.20, 0.36)
 
 	return LinkTheme{
 		AccentColor:  hslHex(h, accentS*100, accentL*100),
-		BgStartColor: hslHex(h, bgS*100, 26),
-		BgEndColor:   hslHex(math.Mod(h+12, 360), clampFloat(math.Max(bgS*0.86, 0.22), 0.22, 0.5)*100, 15),
-		BorderColor:  hslHex(h, borderS*100, 43),
+		BgStartColor: hslHex(themeHue, bgS*100, 22),
+		BgEndColor:   hslHex(themeHue, bgS*100, 18),
+		BorderColor:  hslHex(themeHue, borderS*100, 30),
 		TextColor:    "#F8FBFF",
+	}
+}
+
+func shiftedThemeHue(h float64) float64 {
+	h = math.Mod(h, 360)
+	if h < 0 {
+		h += 360
+	}
+
+	switch {
+	case h >= 30 && h <= 210:
+		return math.Mod(h-5+360, 360)
+	default:
+		return math.Mod(h+5, 360)
 	}
 }
 
