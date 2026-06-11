@@ -230,12 +230,16 @@
       var categoryName = group.getAttribute("data-category-name") || "";
       var visibleLinks = 0;
       var isFavoritesSection = group.hasAttribute("data-favorites-section");
+      var groupHaystack = normalize([
+        group.getAttribute("data-search-text"),
+        categoryName
+      ].join(" "));
+      var groupMatchesSearch = !query || groupHaystack.indexOf(query) !== -1;
 
       group.querySelectorAll(".dashboard-link[data-link-id]").forEach(function (link) {
         var haystack = normalize([
           link.getAttribute("data-search-text"),
-          group.getAttribute("data-search-text"),
-          categoryName
+          groupHaystack
         ].join(" "));
         var matchesSearch = !query || haystack.indexOf(query) !== -1;
 
@@ -245,8 +249,12 @@
         }
       });
 
-      group.hidden = visibleLinks === 0 || (isFavoritesSection && favorites.length === 0);
-      if (visibleLinks > 0) {
+      if (isFavoritesSection) {
+        group.hidden = visibleLinks === 0 || favorites.length === 0;
+      } else {
+        group.hidden = visibleLinks === 0 && !groupMatchesSearch;
+      }
+      if (!group.hidden) {
         visibleGroups += 1;
       }
     });

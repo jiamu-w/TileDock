@@ -36,6 +36,7 @@ type NavGroup struct {
 	GridRows  int       `gorm:"not null;default:0"`
 	Lang      string    `gorm:"-"`
 	CSRFToken string    `gorm:"-"`
+	AIEnabled bool      `gorm:"-"`
 	NavLinks  []NavLink `gorm:"foreignKey:GroupID;references:ID;constraint:OnDelete:CASCADE"`
 	CreatedAt time.Time
 	UpdatedAt time.Time

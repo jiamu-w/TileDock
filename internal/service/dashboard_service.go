@@ -27,6 +27,8 @@ type DashboardData struct {
 	DashboardDescription string
 	WeatherLocation      string
 	ThumbnailBackground  bool
+	AIEnabled            bool
+	AI                   AIConfig
 	DashboardBg          string
 	DashboardBlur        int
 	DashboardOverlay     float64
@@ -111,6 +113,10 @@ func (s *DashboardService) GetDashboardData(ctx context.Context, currentUsername
 	if err != nil {
 		return nil, err
 	}
+	aiConfig, err := NewSettingService(s.settingRepo).LoadAIConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	backgroundValue := ""
 	if background != nil && background.Value != "" && strings.TrimSpace(background.Value) != "" {
@@ -163,6 +169,10 @@ func (s *DashboardService) GetDashboardData(ctx context.Context, currentUsername
 			}
 		}
 	}
+	aiEnabled := NewAIService().Enabled(aiConfig)
+	for groupIndex := range groups {
+		groups[groupIndex].AIEnabled = aiEnabled
+	}
 
 	css := fmt.Sprintf(".dashboard-page::before { background: rgba(0, 0, 0, %.2f); backdrop-filter: blur(%dpx); -webkit-backdrop-filter: blur(%dpx); }", overlayValue, blurValue, blurValue)
 	if backgroundValue != "" {
@@ -181,6 +191,8 @@ func (s *DashboardService) GetDashboardData(ctx context.Context, currentUsername
 		DashboardDescription: descriptionValue,
 		WeatherLocation:      weatherLocationValue,
 		ThumbnailBackground:  thumbnailBackgroundValue,
+		AIEnabled:            aiEnabled,
+		AI:                   aiConfig,
 		DashboardBg:          backgroundValue,
 		DashboardBlur:        blurValue,
 		DashboardOverlay:     overlayValue,

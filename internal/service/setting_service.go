@@ -19,6 +19,11 @@ const (
 	dashboardDescriptionKey     = "dashboard_description"
 	dashboardWeatherLocationKey = "dashboard_weather_location"
 	dashboardThumbnailBgKey     = "dashboard_thumbnail_background_enabled"
+	aiEnabledKey                = "ai_enabled"
+	aiProviderKey               = "ai_provider"
+	aiBaseURLKey                = "ai_base_url"
+	aiAPIKeyKey                 = "ai_api_key"
+	aiModelKey                  = "ai_model"
 	defaultDashboardBlur        = 8
 	defaultDashboardOverlay     = 0.38
 	maxDashboardOverlay         = 0.85
@@ -43,7 +48,17 @@ type SettingsPageData struct {
 	DashboardDescription string
 	WeatherLocation      string
 	ThumbnailBackground  bool
+	AI                   AIConfig
 	Settings             []model.Setting
+}
+
+// AIConfig stores the configured AI provider.
+type AIConfig struct {
+	Enabled  bool
+	Provider string
+	BaseURL  string
+	APIKey   string
+	Model    string
 }
 
 // List returns settings.
@@ -81,11 +96,16 @@ func (s *SettingService) List(ctx context.Context) (*SettingsPageData, error) {
 	if err != nil {
 		return nil, err
 	}
+	aiConfig, err := s.LoadAIConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	data := &SettingsPageData{
 		Settings:         settings,
 		DashboardBlur:    defaultDashboardBlur,
 		DashboardOverlay: defaultDashboardOverlay,
+		AI:               aiConfig,
 	}
 	if background != nil {
 		data.DashboardBackground = background.Value
@@ -192,6 +212,113 @@ func (s *SettingService) SaveDashboardThumbnailBackground(ctx context.Context, e
 		Key:   dashboardThumbnailBgKey,
 		Value: value,
 	})
+}
+
+// SaveAIConfig stores AI provider settings.
+func (s *SettingService) SaveAIConfig(ctx context.Context, cfg AIConfig) error {
+	cfg = NormalizeAIConfig(cfg)
+	provider := cfg.Provider
+	values := map[string]string{
+		aiEnabledKey:  boolString(cfg.Enabled && provider != "disabled"),
+		aiProviderKey: provider,
+		aiBaseURLKey:  strings.TrimSpace(cfg.BaseURL),
+		aiAPIKeyKey:   strings.TrimSpace(cfg.APIKey),
+		aiModelKey:    strings.TrimSpace(cfg.Model),
+	}
+	for key, value := range values {
+		if err := s.repo.Upsert(ctx, &model.Setting{Key: key, Value: value}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// LoadAIConfig returns normalized AI settings.
+func (s *SettingService) LoadAIConfig(ctx context.Context) (AIConfig, error) {
+	cfg := AIConfig{Provider: "disabled"}
+	settings, err := s.repo.List(ctx)
+	if err != nil {
+		return cfg, err
+	}
+	for _, setting := range settings {
+		switch strings.TrimSpace(setting.Key) {
+		case aiEnabledKey:
+			cfg.Enabled = settingBool(setting.Value)
+		case aiProviderKey:
+			cfg.Provider = normalizeAIProvider(setting.Value)
+		case aiBaseURLKey:
+			cfg.BaseURL = strings.TrimSpace(setting.Value)
+		case aiAPIKeyKey:
+			cfg.APIKey = strings.TrimSpace(setting.Value)
+		case aiModelKey:
+			cfg.Model = strings.TrimSpace(setting.Value)
+		}
+	}
+	cfg.Provider = normalizeAIProvider(cfg.Provider)
+	if cfg.Provider == "disabled" {
+		cfg.Enabled = false
+	}
+	return NormalizeAIConfig(cfg), nil
+}
+
+// NormalizeAIConfig fills provider defaults and normalizes user input.
+func NormalizeAIConfig(cfg AIConfig) AIConfig {
+	cfg.Provider = normalizeAIProvider(cfg.Provider)
+	cfg.BaseURL = strings.TrimSpace(cfg.BaseURL)
+	cfg.APIKey = strings.TrimSpace(cfg.APIKey)
+	cfg.Model = strings.TrimSpace(cfg.Model)
+	if cfg.Provider == "disabled" {
+		cfg.Enabled = false
+	}
+	if cfg.BaseURL == "" {
+		cfg.BaseURL = defaultAIBaseURL(cfg.Provider)
+	}
+	if cfg.Model == "" {
+		cfg.Model = defaultAIModel(cfg.Provider)
+	}
+	return cfg
+}
+
+func normalizeAIProvider(provider string) string {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "openai", "ollama", "lmstudio", "custom":
+		return strings.ToLower(strings.TrimSpace(provider))
+	default:
+		return "disabled"
+	}
+}
+
+func defaultAIBaseURL(provider string) string {
+	switch normalizeAIProvider(provider) {
+	case "openai":
+		return "https://api.openai.com/v1"
+	case "ollama":
+		return "http://localhost:11434/v1"
+	case "lmstudio":
+		return "http://localhost:1234/v1"
+	default:
+		return ""
+	}
+}
+
+func defaultAIModel(provider string) string {
+	switch normalizeAIProvider(provider) {
+	case "openai":
+		return "gpt-4o-mini"
+	case "ollama":
+		return "llama3.1"
+	case "lmstudio":
+		return "local-model"
+	default:
+		return ""
+	}
+}
+
+func boolString(value bool) string {
+	if value {
+		return "true"
+	}
+	return "false"
 }
 
 func settingBool(value string) bool {

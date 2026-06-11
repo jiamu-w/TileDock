@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"panel/internal/i18n"
 	"panel/internal/service"
 	"panel/internal/view"
 	"panel/pkg/runtimepath"
@@ -18,13 +19,15 @@ type NavigationHandler struct {
 	service          *service.NavigationService
 	faviconService   *service.FaviconService
 	thumbnailService *service.ThumbnailService
+	settingService   *service.SettingService
+	aiService        *service.AIService
 	log              *slog.Logger
 	uploadDir        string
 }
 
 // NewNavigationHandler creates a handler.
-func NewNavigationHandler(renderer *view.Renderer, service *service.NavigationService, faviconService *service.FaviconService, thumbnailService *service.ThumbnailService, log *slog.Logger, uploadDir string) *NavigationHandler {
-	return &NavigationHandler{renderer: renderer, service: service, faviconService: faviconService, thumbnailService: thumbnailService, log: log, uploadDir: uploadDir}
+func NewNavigationHandler(renderer *view.Renderer, service *service.NavigationService, faviconService *service.FaviconService, thumbnailService *service.ThumbnailService, settingService *service.SettingService, aiService *service.AIService, log *slog.Logger, uploadDir string) *NavigationHandler {
+	return &NavigationHandler{renderer: renderer, service: service, faviconService: faviconService, thumbnailService: thumbnailService, settingService: settingService, aiService: aiService, log: log, uploadDir: uploadDir}
 }
 
 // CreateGroup handles group creation.
@@ -78,6 +81,7 @@ func (h *NavigationHandler) CreateLink(c *gin.Context) {
 		IconCachedPath: cachedIconPath(iconPath),
 		OpenInNew:      c.PostForm("open_in_new") == "on",
 	}
+	h.applyAIEnrichment(c, &input)
 	theme := service.BuildLinkTheme(h.uploadDir, input.IconCachedPath, input.URL, input.Title)
 	input.ThemeAccentColor = theme.AccentColor
 	input.ThemeBgStartColor = theme.BgStartColor
@@ -101,6 +105,41 @@ func (h *NavigationHandler) CreateLink(c *gin.Context) {
 	}
 	auditLog(h.log, c, "link.create", "group_id", input.GroupID, "title", input.Title, "url", input.URL)
 	redirectBack(c, "/")
+}
+
+func (h *NavigationHandler) applyAIEnrichment(c *gin.Context, input *service.LinkInput) {
+	if h.aiService == nil || h.settingService == nil || input == nil || strings.TrimSpace(input.URL) == "" {
+		return
+	}
+	cfg, err := h.settingService.LoadAIConfig(c.Request.Context())
+	if err != nil || !h.aiService.Enabled(cfg) {
+		return
+	}
+	pageData, err := h.service.List(c.Request.Context())
+	if err != nil {
+		h.log.Warn("load groups for AI enrichment failed", "error", err)
+		return
+	}
+	result, err := h.aiService.EnrichLink(c.Request.Context(), cfg, service.LinkEnrichRequest{
+		URL:         input.URL,
+		Title:       input.Title,
+		Description: input.Description,
+		GroupID:     input.GroupID,
+		Lang:        i18n.FromContext(c),
+	}, pageData.Groups)
+	if err != nil {
+		h.log.Warn("AI link enrichment failed", "error", err)
+		return
+	}
+	if strings.TrimSpace(input.Title) == "" && strings.TrimSpace(result.Title) != "" {
+		input.Title = result.Title
+	}
+	if strings.TrimSpace(input.Description) == "" && strings.TrimSpace(result.Description) != "" {
+		input.Description = result.Description
+	}
+	if strings.TrimSpace(result.GroupID) != "" {
+		input.GroupID = result.GroupID
+	}
 }
 
 // UpdateLink handles link updates.

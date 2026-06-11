@@ -28,6 +28,7 @@ func New(
 	navHandler *handler.NavigationHandler,
 	settingHandler *handler.SettingHandler,
 	systemHandler *handler.SystemHandler,
+	aiHandler *handler.AIHandler,
 ) *gin.Engine {
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -89,6 +90,9 @@ func New(
 	authenticated.POST("/settings/restore", settingHandler.RestoreBackup)
 	authenticated.POST("/settings/bookmarks/import", settingHandler.ImportBookmarks)
 	authenticated.POST("/settings/favicons/rescan", settingHandler.RescanFavicons)
+	authenticated.POST("/api/ai/test", aiHandler.TestConfig)
+	authenticated.POST("/api/ai/links/enrich", aiHandler.EnrichLink)
+	authenticated.POST("/api/ai/search", aiHandler.Search)
 
 	return engine
 }

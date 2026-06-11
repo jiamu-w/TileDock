@@ -5,13 +5,16 @@
     <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
     <h3>{{ t .Lang "dashboard.link.new" }}</h3>
     <input type="hidden" name="group_id" value="{{ .ID }}">
-    <label><span>{{ t .Lang "dashboard.form.title" }}</span><input name="title" required></label>
+    <label><span>{{ t .Lang "dashboard.form.title" }}</span><input name="title" {{ if not .AIEnabled }}required{{ end }}></label>
     <label><span>{{ t .Lang "dashboard.form.url" }}</span><input name="url" placeholder="https://example.com" required></label>
     <label><span>{{ t .Lang "dashboard.form.description" }}</span><input name="description"></label>
     <label><span>{{ t .Lang "dashboard.form.icon_url" }}</span><input name="icon" placeholder="https://example.com/icon.png"></label>
     <label><span>{{ t .Lang "dashboard.form.icon_file" }}</span><input name="icon_file" type="file" accept=".jpg,.jpeg,.png,.webp,.gif"></label>
     <label class="inline"><input name="open_in_new" type="checkbox" checked> {{ t .Lang "dashboard.form.open_new" }}</label>
     <div class="actions">
+      {{ if .AIEnabled }}
+      <button class="ghost-btn" type="button" data-ai-enrich>{{ if eq .Lang "zh" }}AI 填充{{ else if eq .Lang "ja" }}AI 入力{{ else }}AI Fill{{ end }}</button>
+      {{ end }}
       <button class="primary-btn" type="submit">{{ t .Lang "dashboard.link.create" }}</button>
       <button class="ghost-btn" type="button" data-panel-toggle="add-link-{{ .ID }}">{{ t .Lang "common.cancel" }}</button>
     </div>

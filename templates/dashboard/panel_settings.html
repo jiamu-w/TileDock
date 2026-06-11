@@ -38,6 +38,40 @@
               {{ if eq .Lang "zh" }}使用网站页面缩略图作为链接卡片背景{{ else if eq .Lang "ja" }}サイトのサムネイルをリンクカード背景に使う{{ else }}Use website thumbnails as link card backgrounds{{ end }}
             </label>
             <p class="muted">{{ if eq .Lang "zh" }}开启后会在后台异步生成并缓存缩略图；未完成或失败的网站仍使用默认卡片背景。{{ else if eq .Lang "ja" }}有効にするとバックグラウンドでサムネイルを生成・キャッシュします。未完了または失敗したサイトは既定背景を使います。{{ else }}When enabled, thumbnails are generated and cached in the background. Cards keep the default background until a thumbnail is ready.{{ end }}</p>
+            <div class="stack settings-subsection">
+              <h4>{{ if eq .Lang "zh" }}AI 功能{{ else if eq .Lang "ja" }}AI 機能{{ else }}AI Features{{ end }}</h4>
+              <p class="muted">{{ if eq .Lang "zh" }}接入后会开启 AI 搜索、AI 填充，以及新增网站时自动补全名称、简介和分类。未接入时继续使用当前的网站图标抓取方式。{{ else if eq .Lang "ja" }}接続後、AI 検索、AI 入力、追加時の名前・説明・分類補完を有効にします。未接続の場合は現在のアイコン取得方式を使います。{{ else }}When connected, AI search, AI fill, and automatic title, description, and category suggestions are enabled. Without AI, the current icon fetching flow is unchanged.{{ end }}</p>
+              <label class="inline">
+                <input name="ai_enabled" type="checkbox" {{ if .Data.AI.Enabled }}checked{{ end }}>
+                {{ if eq .Lang "zh" }}启用 AI{{ else if eq .Lang "ja" }}AI を有効化{{ else }}Enable AI{{ end }}
+              </label>
+              <label>
+                <span>{{ if eq .Lang "zh" }}AI Provider{{ else if eq .Lang "ja" }}AI Provider{{ else }}AI Provider{{ end }}</span>
+                <select name="ai_provider">
+                  <option value="disabled" {{ if eq .Data.AI.Provider "disabled" }}selected{{ end }}>Disabled</option>
+                  <option value="openai" {{ if eq .Data.AI.Provider "openai" }}selected{{ end }}>OpenAI</option>
+                  <option value="ollama" {{ if eq .Data.AI.Provider "ollama" }}selected{{ end }}>Ollama</option>
+                  <option value="lmstudio" {{ if eq .Data.AI.Provider "lmstudio" }}selected{{ end }}>LM Studio</option>
+                  <option value="custom" {{ if eq .Data.AI.Provider "custom" }}selected{{ end }}>Custom OpenAI-compatible</option>
+                </select>
+              </label>
+              <label>
+                <span>{{ if eq .Lang "zh" }}Base URL{{ else }}Base URL{{ end }}</span>
+                <input name="ai_base_url" value="{{ .Data.AI.BaseURL }}" placeholder="https://api.openai.com/v1">
+              </label>
+              <label>
+                <span>{{ if eq .Lang "zh" }}API Key{{ else }}API Key{{ end }}</span>
+                <input name="ai_api_key" type="password" autocomplete="off" placeholder="{{ if eq .Lang "zh" }}留空则保留当前密钥；Ollama / LM Studio 可留空{{ else }}Leave blank to keep the current key; may be empty for Ollama / LM Studio{{ end }}">
+              </label>
+              <label>
+                <span>{{ if eq .Lang "zh" }}模型{{ else if eq .Lang "ja" }}モデル{{ else }}Model{{ end }}</span>
+                <input name="ai_model" value="{{ .Data.AI.Model }}" placeholder="gpt-4o-mini">
+              </label>
+              <div class="actions ai-test-actions">
+                <button class="ghost-btn" type="button" data-ai-test>{{ if eq .Lang "zh" }}测试 AI 配置{{ else if eq .Lang "ja" }}AI 設定をテスト{{ else }}Test AI Configuration{{ end }}</button>
+                <span class="muted" data-ai-test-status></span>
+              </div>
+            </div>
             <label>
               <span>{{ t .Lang "settings.background.upload" }}</span>
               <input name="dashboard_background_file" type="file" accept=".jpg,.jpeg,.png,.webp,.gif">

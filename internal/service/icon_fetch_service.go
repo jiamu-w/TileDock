@@ -238,31 +238,47 @@ func fetchAndStoreIconCandidate(ctx context.Context, client *http.Client, candid
 	}
 
 	contentType := strings.ToLower(strings.TrimSpace(resp.Header.Get("Content-Type")))
+	ext := strings.ToLower(path.Ext(candidate))
 	switch {
 	case strings.Contains(contentType, "image/x-icon"), strings.Contains(contentType, "image/vnd.microsoft.icon"):
+		if !isICOFile(payload) {
+			return "", fmt.Errorf("invalid ico payload")
+		}
 		return saveRawIcon(uploadDir, payload, ".ico")
 	case strings.Contains(contentType, "image/"):
 		if strings.Contains(contentType, "svg") {
 			return "", fmt.Errorf("svg icons are not cached")
 		}
-		imageData, _, err := image.Decode(bytes.NewReader(payload))
-		if err != nil {
-			return "", err
+		return decodeResizeAndSaveIcon(uploadDir, payload)
+	case ext == ".ico":
+		if !isICOFile(payload) {
+			return "", fmt.Errorf("invalid ico payload")
 		}
-		optimized := resizeImage(imageData, maxIconWidth, maxIconHeight)
-		return saveOptimizedIcon(uploadDir, optimized)
+		return saveRawIcon(uploadDir, payload, ".ico")
 	default:
-		ext := strings.ToLower(path.Ext(candidate))
-		if ext == ".ico" {
-			return saveRawIcon(uploadDir, payload, ".ico")
-		}
-		imageData, _, err := image.Decode(bytes.NewReader(payload))
-		if err != nil {
-			return "", err
-		}
-		optimized := resizeImage(imageData, maxIconWidth, maxIconHeight)
-		return saveOptimizedIcon(uploadDir, optimized)
+		return decodeResizeAndSaveIcon(uploadDir, payload)
 	}
+}
+
+func decodeResizeAndSaveIcon(uploadDir string, payload []byte) (string, error) {
+	imageData, _, err := image.Decode(bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+	if !hasUsableIconBounds(imageData) {
+		return "", fmt.Errorf("icon image is too small")
+	}
+	optimized := resizeImage(imageData, maxIconWidth, maxIconHeight)
+	return saveOptimizedIcon(uploadDir, optimized)
+}
+
+func isICOFile(payload []byte) bool {
+	return len(payload) >= 6 && payload[0] == 0 && payload[1] == 0 && payload[2] == 1 && payload[3] == 0 && (payload[4] != 0 || payload[5] != 0)
+}
+
+func hasUsableIconBounds(img image.Image) bool {
+	bounds := img.Bounds()
+	return bounds.Dx() >= 8 && bounds.Dy() >= 8
 }
 
 func readLimited(reader io.Reader, maxBytes int64) ([]byte, error) {

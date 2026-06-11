@@ -143,6 +143,22 @@ func (h *SettingHandler) Save(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	aiAPIKey := c.PostForm("ai_api_key")
+	if strings.TrimSpace(aiAPIKey) == "" {
+		if existingAI, err := h.service.LoadAIConfig(c.Request.Context()); err == nil {
+			aiAPIKey = existingAI.APIKey
+		}
+	}
+	if err := h.service.SaveAIConfig(c.Request.Context(), service.AIConfig{
+		Enabled:  c.PostForm("ai_enabled") == "on",
+		Provider: c.PostForm("ai_provider"),
+		BaseURL:  c.PostForm("ai_base_url"),
+		APIKey:   aiAPIKey,
+		Model:    c.PostForm("ai_model"),
+	}); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	if thumbnailBackground && h.thumbnails != nil {
 		count, err := h.thumbnails.RescanMissing(c.Request.Context())
 		if err != nil {

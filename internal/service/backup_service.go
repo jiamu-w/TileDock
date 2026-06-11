@@ -36,6 +36,11 @@ var allowedRestoreSettingKeys = map[string]struct{}{
 	dashboardDescriptionKey:     {},
 	dashboardWeatherLocationKey: {},
 	dashboardThumbnailBgKey:     {},
+	aiEnabledKey:                {},
+	aiProviderKey:               {},
+	aiBaseURLKey:                {},
+	aiAPIKeyKey:                 {},
+	aiModelKey:                  {},
 }
 
 // BackupService creates downloadable backup archives.

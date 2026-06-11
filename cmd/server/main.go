@@ -69,6 +69,7 @@ func main() {
 	bookmarkImportService := service.NewBookmarkImportService(navService, cfg.Storage.UploadDir)
 	settingService := service.NewSettingService(settingRepo)
 	weatherService := service.NewWeatherService(settingRepo)
+	aiService := service.NewAIService()
 	backupService := service.NewBackupService(
 		database,
 		groupRepo,
@@ -81,11 +82,12 @@ func main() {
 
 	authHandler := handler.NewAuthHandler(renderer, authService, loginRateLimiter, log)
 	dashboardHandler := handler.NewDashboardHandler(renderer, dashboardService, authService)
-	navHandler := handler.NewNavigationHandler(renderer, navService, faviconService, thumbnailService, log, cfg.Storage.UploadDir)
+	navHandler := handler.NewNavigationHandler(renderer, navService, faviconService, thumbnailService, settingService, aiService, log, cfg.Storage.UploadDir)
 	settingHandler := handler.NewSettingHandler(renderer, settingService, authService, backupService, bookmarkImportService, faviconService, thumbnailService, cfg.Storage.UploadDir, log)
 	systemHandler := handler.NewSystemHandler(log, weatherService)
+	aiHandler := handler.NewAIHandler(settingService, navService, aiService, log)
 
-	engine := router.New(cfg, log, renderer, authHandler, dashboardHandler, navHandler, settingHandler, systemHandler)
+	engine := router.New(cfg, log, renderer, authHandler, dashboardHandler, navHandler, settingHandler, systemHandler, aiHandler)
 
 	server := &http.Server{
 		Addr:              cfg.Server.Addr,

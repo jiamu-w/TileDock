@@ -25,6 +25,9 @@
         data-dashboard-search
         autocomplete="off"
         placeholder="{{ if eq .Lang "zh" }}搜索网站、描述、分类或标签{{ else if eq .Lang "ja" }}Search sites, descriptions, categories, or tags{{ else }}Search sites, descriptions, categories, or tags{{ end }}">
+      {{ if and .Data.CanManage .Data.AIEnabled }}
+      <button class="ai-search-btn" type="button" data-ai-search>{{ if eq .Lang "zh" }}AI{{ else }}AI{{ end }}</button>
+      {{ end }}
     </label>
     <div class="dashboard-actions">
       <form method="get" action="/" class="language-select-form">
@@ -169,6 +172,9 @@
   <script src="/static/js/panel-actions.js"></script>
   <script src="/static/js/dashboard-editor.js"></script>
   <script src="/static/js/dashboard-filter.js"></script>
+  {{ if .Data.CanManage }}
+  <script src="/static/js/dashboard-ai.js"></script>
+  {{ end }}
   <script src="/static/js/dashboard-clock.js"></script>
   <script src="/static/js/dashboard-weather.js"></script>
 </body>
